@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Macintosh specific files
+.DS_Store
+bin/
+include/
+pip-selfcheck.json
