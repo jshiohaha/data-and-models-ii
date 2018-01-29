@@ -4,18 +4,17 @@ import numpy as numpy
 import math as math
 
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Dropout, Activation
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
-from sklearn.neural_network import MLPClassifier
 
 
 # TODO: Question 2, 7, 8
 # for 2, we want to know what a NaN is considered for this data set
 
 # boolean flag that helps us decide whether or not to plot the data
-plot = False
+plot_flag = False
 
 def main():
     '''
@@ -33,14 +32,14 @@ def main():
     problem_set_data = panda.read_csv("ProbSet1.csv")
     df = problem_set_data.copy(deep=True)
 
-    if plot:
+    if plot_flag:
         visualize_data_3d(problem_set_data)
 
     normalized_data = normalize_and_visualize_data(problem_set_data)
     X, Y = create_matrix_and_vector_from_data_frame(normalized_data)
-    built_in_model(X, Y)
-    # weights = build_model(X, Y)
-    # test_and_validate_model(X, Y, weights)
+    # built_in_model(X, Y)
+    weights = build_model(X, Y)
+    test_and_validate_model(X, Y, weights)
 
 
 def describe_data_frame(df):
@@ -67,13 +66,12 @@ def describe_data_frame(df):
     print(df.describe())
     print("\n")
 
-
+# TODO: what counts as NA in the data set -- a 0 in the ratio column?
 def check_nan(df):
     print(">> Checking for NaN Values in Data Set\n")
 
     temp = df.copy(deep=True)
     del temp['loan']
-    # TODO: what counts as NA in the data set -- a 0 in the ratio column?
     # temp['fico'].replace(0, numpy.nan);
     # temp['income'].replace(0, numpy.nan);
     temp.replace(0, numpy.nan)
@@ -131,7 +129,7 @@ def normalize_and_visualize_data(df):
     df_norm = panda.DataFrame(scaled_data_array, index=df.index, columns=df.columns)
     describe_data_frame(df_norm)
     
-    if plot:
+    if plot_flag:
         visualize_data_3d(df_norm)
 
     return df_norm
@@ -292,19 +290,22 @@ def built_in_model(X, Y):
     print(">> Training an MLPClassifier model\n")
     # TODO: part 1, 2
 
-    # for the following two, might need to consider another classifier or alter the params
-    # Develop the model with 1 hidden layer with 1 node
-    mlp = MLPClassifier(hidden_layer_sizes=(1,),max_iter=5000)
-    mlp.fit(X,Y)
-    predictions = mlp.predict(X)
-    print(confusion_matrix(Y,predictions))
+    rows, columns = X.shape
 
-    # Develop the model with 1 hidden layer with 2 nodes
-    mlp = MLPClassifier(hidden_layer_sizes=(2,),max_iter=1000)
-    mlp.fit(X,Y)
-    predictions = mlp.predict(X)
-    print(confusion_matrix(Y,predictions))
+    model = Sequential([
+        Dense(20, input_shape=(rows,columns)),
+        Activation('sigmoid')
+    ])
 
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy')
+
+    X = numpy.reshape(X, (columns, rows))
+
+    model.fit(X, Y, epochs=50, batch_size=20)
+    score = model.evaluate(X, Y, batch_size=20)
+
+    print(score)
 
 if __name__ == "__main__":
     main()
