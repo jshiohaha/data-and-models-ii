@@ -4,14 +4,13 @@ import numpy as numpy
 import math as math
 
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
+from keras.layers import Dense, Dropout, Activation, Flatten
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
 
 
 # TODO: Question 2, 7, 8
-# NaN functionality, plot the tangent plane, leverage a built in model for problem 8
 # Q: What counts as NA in the data set -- a 0 in the ratio column?
 
 # 7. Why was this simple classification model acceptable for this data set ? Discuss.
@@ -28,13 +27,14 @@ def main():
     plot_flag = False
 
     problem_set_data = panda.read_csv("ProbSet1.csv")
-    visualize_data_3d(problem_set_data, plot_flag)
-    df = problem_set_data.copy(deep=True)
-    visualize_data_3d(problem_set_data, plot_flag)
+    # visualize_data_3d(problem_set_data, plot_flag)
+    # df = problem_set_data.copy(deep=True)
+    # visualize_data_3d(problem_set_data, plot_flag)
     normalized_data = normalize_and_visualize_data(problem_set_data, plot_flag)
     X, Y = create_matrix_and_vector_from_data_frame(normalized_data)
-    weights = build_model(X, Y)
-    test_and_validate_model(X, Y, weights)
+    built_in_model(X,Y)
+    # weights = build_model(X, Y)
+    # test_and_validate_model(X, Y, weights)
 
 
 def describe_data_frame(df):
@@ -116,7 +116,7 @@ def visualize_data_3d(df, plot_flag=False):
     d = -point.dot(normal)
 
     # create x,y
-    xx, yy = numpy.meshgrid(range(1), range(1))
+    xx, yy = numpy.meshgrid(range(10), range(10))
     z = (-normal[0] * xx - normal[1] * yy - d) * 1. /normal[2]
     surface = fig.gca(projection='3d')
     surface.plot_surface(xx, yy, z)
@@ -165,6 +165,7 @@ def build_model(X, Y, eta=0.01, epochs=100, error_threshold=.001, verbose=False)
         2. Create the y vector
         3. Solve for and print the weights (parameters). Label the weights.
         4. Print the number of iterations (forward / backward sweeps or epochs)
+        TODO...
         5. Plot the data again and include the descision boundary (plane.) Suggest using scatterplot3d() with plane3d().
     '''
     print(">> Building a custom model from matrix X and vector Y\n")
@@ -285,19 +286,19 @@ def built_in_model(X, Y):
         3. Now, develop the model with 1 hidden layer with 1 node. Display the model and test as in part b above. Comment.
         4. Now, develop the model with 1 hidden layer with 2 nodes. Display the model and test as in part b above. Comment.
     '''
-    print(">> Training an MLPClassifier model\n")\
+    print(">> Training a Keras Sequential model\n")\
 
+    X = X[:,[1,2,3]]
     rows, columns = X.shape
-    model = Sequential([
-        Dense(20, input_shape=(rows,columns)),
-        Activation('sigmoid')
-    ])
-
-    model.compile(optimizer='adam',
-                  loss='binary_crossentropy')
 
     X = numpy.reshape(X, (columns, rows))
-
+    model = Sequential()
+    model.add(Dense(32, input_shape=(columns,rows)))
+    # model.add(Flatten())
+    model.add(Dense(10, activation='sigmoid'))
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
     model.fit(X, Y, epochs=50, batch_size=20)
     score = model.evaluate(X, Y, batch_size=20)
 
