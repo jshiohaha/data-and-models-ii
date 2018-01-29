@@ -11,11 +11,10 @@ from sklearn.metrics import mean_squared_error, confusion_matrix, classification
 
 
 # TODO: Question 2, 7, 8
-# for 2, we want to know what a NaN is considered for this data set
+# NaN functionality, plot the tangent plane, leverage a built in model for problem 8
+# Q: What counts as NA in the data set -- a 0 in the ratio column?
 
-# boolean flag that helps us decide whether or not to plot the data
-plot_flag = False
-
+# 7. Why was this simple classification model acceptable for this data set ? Discuss.
 def main():
     '''
         Solution for Problem Set 1 in Data & Models II (RAIK 370H)
@@ -26,18 +25,14 @@ def main():
         results. Each function itself describes what it's doing along
         with the parts of the problem set question it addresses.
     '''
+    plot_flag = False
 
-    # utilizing panda DataFrame, which mimics R DataFrame definition
-    # reference found http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe
     problem_set_data = panda.read_csv("ProbSet1.csv")
+    visualize_data_3d(problem_set_data, plot_flag)
     df = problem_set_data.copy(deep=True)
-
-    if plot_flag:
-        visualize_data_3d(problem_set_data)
-
-    normalized_data = normalize_and_visualize_data(problem_set_data)
+    visualize_data_3d(problem_set_data, plot_flag)
+    normalized_data = normalize_and_visualize_data(problem_set_data, plot_flag)
     X, Y = create_matrix_and_vector_from_data_frame(normalized_data)
-    # built_in_model(X, Y)
     weights = build_model(X, Y)
     test_and_validate_model(X, Y, weights)
 
@@ -66,33 +61,34 @@ def describe_data_frame(df):
     print(df.describe())
     print("\n")
 
-# TODO: what counts as NA in the data set -- a 0 in the ratio column?
+
 def check_nan(df):
     print(">> Checking for NaN Values in Data Set\n")
 
     temp = df.copy(deep=True)
-    del temp['loan']
-    # temp['fico'].replace(0, numpy.nan);
-    # temp['income'].replace(0, numpy.nan);
+    # del temp['loan']
+    # temp['col_name'].replace(0, numpy.nan);
+    # print(temp['ratio'].isnull().sum())
     temp.replace(0, numpy.nan)
     print(temp)
-    # print(temp['ratio'].isnull().sum())
 
 
-def visualize_data_3d(df):
+def visualize_data_3d(df, plot_flag=False):
     ''' Aimed at visualizing the data in 3D space and then analyzing
         correlations between variables.
 
         1. Make a 3D scatterplot of the data. Identify observations as good or bad loans using color. Comment.
         2. Output the correlations between the explanatory variables (the features.) Comment.
     '''
+    if not plot_flag:
+        return
+
     print(">> Constructing 3D plot of data set values\n")
 
     # plot a 2d plane through a 3d graph: https://stackoverflow.com/questions/47835726/plotting-a-2d-plane-through-a-3d-surface
     fig = plot.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    # define paramtetric vectors for the scatter plot
     good_loans = df.loc[df['loan'] == 1]
     good_x = good_loans['fico']
     good_y = good_loans['income']
@@ -110,11 +106,26 @@ def visualize_data_3d(df):
     ax.set_ylabel('Income')
     ax.set_zlabel('Ratio')
 
-    ax.legend() # matches `color` to `label`
+    point  = numpy.array([1, 2, 3])
+    normal = numpy.array([1, 1, 2])
+
+    # TODO: how do we plot a plane based on the weights
+    # a plane is a*x+b*y+c*z+d=0
+    # [a,b,c] is the normal. Thus, we have to calculate
+    # d and we're set
+    d = -point.dot(normal)
+
+    # create x,y
+    xx, yy = numpy.meshgrid(range(1), range(1))
+    z = (-normal[0] * xx - normal[1] * yy - d) * 1. /normal[2]
+    surface = fig.gca(projection='3d')
+    surface.plot_surface(xx, yy, z)
+
+    ax.legend()
     plot.show()
 
 
-def normalize_and_visualize_data(df):
+def normalize_and_visualize_data(df, plot_flag):
     ''' Aimed at scaling each feature to lie in the range from 0 to 1
         and then making a 3d scatter plot of the scaled data.
 
@@ -124,13 +135,10 @@ def normalize_and_visualize_data(df):
     print(">> Normalizing the data set between 0 and 1\n")
 
     scaler = MinMaxScaler()
-    # scaler = StandardScaler().fit(df) # yields scaled features on range -1, 1
     scaled_data_array = scaler.fit_transform(df)
     df_norm = panda.DataFrame(scaled_data_array, index=df.index, columns=df.columns)
     describe_data_frame(df_norm)
-    
-    if plot_flag:
-        visualize_data_3d(df_norm)
+    visualize_data_3d(df, plot_flag)
 
     return df_norm
 
@@ -139,12 +147,9 @@ def create_matrix_and_vector_from_data_frame(df):
     print(">> Creating X matrix and Y vector from normalized data set\n")
 
     rows, columns = df.shape
-
-    # Add first column of ones
     one_col = numpy.ones((rows,), dtype=int)
     df.insert(0, 'x_0', one_col)
 
-    # Create Y vector and X Matrix
     Y = df['loan'].as_matrix()
     X = df.as_matrix(columns=df.columns[:4])
 
@@ -169,15 +174,12 @@ def build_model(X, Y, eta=0.01, epochs=100, error_threshold=.001, verbose=False)
     print("Error threshold: " + str(error_threshold))
 
     rows, columns = X.shape
-
-    # initialize weight vector with all 0s for each of the columns of X
     weights = numpy.reshape(numpy.zeros(columns), (columns, 1))
     
     if verbose:
         print("Weights initialized to " + str(weights))
         print("\n")
 
-    # create the Y_hat vector for each guess
     y_hat = numpy.reshape(numpy.zeros(rows), (rows, 1))
 
     for iteration in range(epochs):
@@ -189,13 +191,9 @@ def build_model(X, Y, eta=0.01, epochs=100, error_threshold=.001, verbose=False)
         for i, x in enumerate(X):
             y_hat[i] = simple_activation_function(numpy.dot(X[i],weights))
             error = Y[i] - y_hat[i]
-            # update each component of delta_weights with the learning rate, 
-            # error, and row of X
             delta_weights = numpy.add(delta_weights, numpy.reshape(eta*error*X[i], (4, 1)))
 
-        # update weights vector after iterating through all rows of X
         weights = numpy.add(weights, delta_weights)
-
         mse = mean_squared_error(Y, y_hat)
 
         if verbose:
@@ -287,11 +285,9 @@ def built_in_model(X, Y):
         3. Now, develop the model with 1 hidden layer with 1 node. Display the model and test as in part b above. Comment.
         4. Now, develop the model with 1 hidden layer with 2 nodes. Display the model and test as in part b above. Comment.
     '''
-    print(">> Training an MLPClassifier model\n")
-    # TODO: part 1, 2
+    print(">> Training an MLPClassifier model\n")\
 
     rows, columns = X.shape
-
     model = Sequential([
         Dense(20, input_shape=(rows,columns)),
         Activation('sigmoid')
@@ -306,6 +302,7 @@ def built_in_model(X, Y):
     score = model.evaluate(X, Y, batch_size=20)
 
     print(score)
+
 
 if __name__ == "__main__":
     main()
