@@ -296,13 +296,14 @@ def built_in_model(X, Y):
     model = Sequential()
 
     # model.add(Flatten())
-    model.add(Dense(32, input_shape=(rows,columns)))
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(Dense(2, input_shape=(rows, columns)))
+    model.add(Dense(1, input_shape=(rows, columns), activation='sigmoid'))
     model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
+                  # loss='binary_crossentropy',
+                  loss='mse',
                   metrics=['accuracy'])
-    model.fit(X, Y, epochs=200, batch_size=20, verbose=2)
-    score = model.evaluate(X, Y, batch_size=20)
+    model.fit(X, Y, epochs=1000, batch_size=32, verbose=2)
+    score = model.evaluate(X, Y, batch_size=32)
 
     print(score)
 
