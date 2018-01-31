@@ -11,8 +11,6 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
 
 
-# TODO: Question 8
-
 def main():
     '''
         Solution for Problem Set 1 in Data & Models II (RAIK 370H)
@@ -26,14 +24,15 @@ def main():
     plot_flag = False
 
     problem_set_data = panda.read_csv("ProbSet1.csv")
-    # describe_data_frame(problem_set_data, file)
-    # visualize_data_3d(problem_set_data, plot_flag)
+    describe_data_frame(problem_set_data)
+    visualize_data_3d(problem_set_data, plot_flag)
     normalized_data = normalize_and_visualize_data(problem_set_data, plot_flag)
+    feature_correlation(normalized_data)
     X, Y = create_matrix_and_vector_from_data_frame(normalized_data)
-    # built_in_model(X,Y)
     weights = build_model(X, Y)
-    visualize_data_3d(normalized_data, weights, True)
-    # test_and_validate_model(X, Y, weights)
+    visualize_data_3d(normalized_data, weights, plot_flag)
+    test_and_validate_model(X, Y, weights)
+    built_in_model(X,Y)
 
 
 def describe_data_frame(dataframe):
@@ -61,16 +60,19 @@ def describe_data_frame(dataframe):
     print("\n")
 
 
-def check_nan(dataframe):
-    print(">> Checking for NaN Values in Data Set\n")
+def feature_correlation(dataframe):
+    print(">> Calculating correlations between the explanatory variables")
+    Y = dataframe['loan']
 
-    temp = dataframe.copy(deep=True)
-    # del temp['loan']
-    # temp['col_name'].replace(0, numpy.nan);
-    # print(temp['ratio'].isnull().sum())
-    temp.replace(0, numpy.nan)
-    print(temp)
+    fico_income = numpy.correlate(dataframe['fico'], dataframe['income'])
+    print(">> -- Correlation between Fico and Income: " + str(fico_income))
 
+    fico_ratio = numpy.correlate(dataframe['fico'], dataframe['ratio'])
+    print(">> -- Correlation between Fico and Ratio: " + str(fico_ratio))
+
+    income_ratio = numpy.correlate(dataframe['income'], dataframe['ratio'])
+    print(">> -- Correlation between Income and Ratio: " + str(income_ratio))
+    print("\n")
 
 def visualize_data_3d(dataframe, weights=None, plot_flag=False):
     ''' Aimed at visualizing the data in 3D space and then analyzing
@@ -299,7 +301,7 @@ def built_in_model(X, Y):
                   # loss='binary_crossentropy',
                   loss='mse',
                   metrics=['accuracy'])
-    model.fit(X, Y, epochs=10000, batch_size=32, verbose=2)
+    model.fit(X, Y, epochs=2600, batch_size=32, verbose=2)
     score = model.evaluate(X, Y, batch_size=32)
 
     print(score)
