@@ -105,3 +105,6 @@ ENV/
 bin/
 include/
 pip-selfcheck.json
+
+*.tex
+*.txt

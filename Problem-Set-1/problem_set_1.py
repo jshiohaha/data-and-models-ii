@@ -3,6 +3,7 @@ import matplotlib.pyplot as plot
 import numpy as numpy
 import math as math
 
+from matplotlib import cm
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from mpl_toolkits.mplot3d import Axes3D
@@ -10,10 +11,8 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
 
 
-# TODO: Question 2, 7, 8
-# Q: What counts as NA in the data set -- a 0 in the ratio column?
+# TODO: Question 8
 
-# 7. Why was this simple classification model acceptable for this data set ? Discuss.
 def main():
     '''
         Solution for Problem Set 1 in Data & Models II (RAIK 370H)
@@ -27,17 +26,17 @@ def main():
     plot_flag = False
 
     problem_set_data = panda.read_csv("ProbSet1.csv")
-    # visualize_data_3d(problem_set_data, plot_flag)
-    # df = problem_set_data.copy(deep=True)
+    # describe_data_frame(problem_set_data, file)
     # visualize_data_3d(problem_set_data, plot_flag)
     normalized_data = normalize_and_visualize_data(problem_set_data, plot_flag)
     X, Y = create_matrix_and_vector_from_data_frame(normalized_data)
-    built_in_model(X,Y)
-    # weights = build_model(X, Y)
+    # built_in_model(X,Y)
+    weights = build_model(X, Y)
+    visualize_data_3d(normalized_data, weights, True)
     # test_and_validate_model(X, Y, weights)
 
 
-def describe_data_frame(df):
+def describe_data_frame(dataframe):
     ''' Aimed at describing characteristics of the problem set 1 data set for the
         following parts:
 
@@ -48,24 +47,24 @@ def describe_data_frame(df):
     '''
     print(">> Data Frame Description\n")
 
-    rows, columns = df.shape
+    rows, columns = dataframe.shape
     print("num rows (observations): " + str(rows))
     print("num cols (features): " + str(columns))
     print("\n")
 
-    print(df.info())
+    print(str(dataframe.info()))
 
     print("\nData Set Statistics")
     print("=====================")
 
-    print(df.describe())
+    print(str(dataframe.describe()))
     print("\n")
 
 
-def check_nan(df):
+def check_nan(dataframe):
     print(">> Checking for NaN Values in Data Set\n")
 
-    temp = df.copy(deep=True)
+    temp = dataframe.copy(deep=True)
     # del temp['loan']
     # temp['col_name'].replace(0, numpy.nan);
     # print(temp['ratio'].isnull().sum())
@@ -73,7 +72,7 @@ def check_nan(df):
     print(temp)
 
 
-def visualize_data_3d(df, plot_flag=False):
+def visualize_data_3d(dataframe, weights=None, plot_flag=False):
     ''' Aimed at visualizing the data in 3D space and then analyzing
         correlations between variables.
 
@@ -89,14 +88,14 @@ def visualize_data_3d(df, plot_flag=False):
     fig = plot.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    good_loans = df.loc[df['loan'] == 1]
+    good_loans = dataframe.loc[dataframe['loan'] == 1]
     good_x = good_loans['fico']
     good_y = good_loans['income']
     good_z = good_loans['ratio']
 
     ax.scatter(good_x,good_y,good_z, color='green', label='Good Loans')
 
-    bad_loans = df.loc[df['loan'] == 0]
+    bad_loans = dataframe.loc[dataframe['loan'] == 0]
     bad_x = bad_loans['fico']
     bad_y = bad_loans['income']
     bad_z = bad_loans['ratio']
@@ -106,26 +105,25 @@ def visualize_data_3d(df, plot_flag=False):
     ax.set_ylabel('Income')
     ax.set_zlabel('Ratio')
 
-    point  = numpy.array([1, 2, 3])
-    normal = numpy.array([1, 1, 2])
+    if weights is not None:
+        # create x,y
+        xx, yy = numpy.meshgrid(range(2), range(2))
 
-    # TODO: how do we plot a plane based on the weights
-    # a plane is a*x+b*y+c*z+d=0
-    # [a,b,c] is the normal. Thus, we have to calculate
-    # d and we're set
-    d = -point.dot(normal)
+        if verbose:
+            print("\nx: " + str(xx))
+            print("\ny: " + str(yy))
 
-    # create x,y
-    xx, yy = numpy.meshgrid(range(10), range(10))
-    z = (-normal[0] * xx - normal[1] * yy - d) * 1. /normal[2]
-    surface = fig.gca(projection='3d')
-    surface.plot_surface(xx, yy, z)
+        my_col = cm.jet(numpy.random.rand(rows,columns))
+        z = - ((weights[1]/weights[2]) * xx) - ((weights[2]/weights[2]) * yy) - (weights[0]/weights[2])
+
+        surface = fig.gca(projection='3d')
+        surface.plot_surface(xx, yy, z, facecolors=my_col)
 
     ax.legend()
     plot.show()
 
 
-def normalize_and_visualize_data(df, plot_flag):
+def normalize_and_visualize_data(dataframe, plot_flag):
     ''' Aimed at scaling each feature to lie in the range from 0 to 1
         and then making a 3d scatter plot of the scaled data.
 
@@ -135,28 +133,28 @@ def normalize_and_visualize_data(df, plot_flag):
     print(">> Normalizing the data set between 0 and 1\n")
 
     scaler = MinMaxScaler()
-    scaled_data_array = scaler.fit_transform(df)
-    df_norm = panda.DataFrame(scaled_data_array, index=df.index, columns=df.columns)
+    scaled_data_array = scaler.fit_transform(dataframe)
+    df_norm = panda.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
     describe_data_frame(df_norm)
-    visualize_data_3d(df, plot_flag)
+    visualize_data_3d(dataframe, plot_flag)
 
     return df_norm
 
 
-def create_matrix_and_vector_from_data_frame(df):
+def create_matrix_and_vector_from_data_frame(dataframe):
     print(">> Creating X matrix and Y vector from normalized data set\n")
 
-    rows, columns = df.shape
+    rows, columns = dataframe.shape
     one_col = numpy.ones((rows,), dtype=int)
-    df.insert(0, 'x_0', one_col)
+    dataframe.insert(0, 'x_0', one_col)
 
-    Y = df['loan'].as_matrix()
-    X = df.as_matrix(columns=df.columns[:4])
+    Y = dataframe['loan'].as_matrix()
+    X = dataframe.as_matrix(columns=dataframe.columns[:4])
 
     return X, Y
 
 
-def build_model(X, Y, eta=0.01, epochs=100, error_threshold=.001, verbose=False):
+def build_model(X, Y, eta=0.001, epochs=100, error_threshold=.001, verbose=False):
     ''' Build a model based on the data frame from the input csv. Perform stochastic gradient descent,
         updating the weights during each iteration so that the root mean squared error of the output
         of the function versus expected output converges.
@@ -237,7 +235,7 @@ def test_and_validate_model(X, Y, weights):
 
     for i, x in enumerate(X):
         Y_hat[i] = simple_activation_function(numpy.dot(X[i], weights))
-        
+
         if Y_hat[i] == Y[i]:
             num_correct += 1
             was_right = True
