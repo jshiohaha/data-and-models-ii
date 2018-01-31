@@ -291,15 +291,17 @@ def built_in_model(X, Y):
     X = X[:,[1,2,3]]
     rows, columns = X.shape
 
-    X = numpy.reshape(X, (columns, rows))
+    X = numpy.reshape(X, (1, rows, columns))
+    Y = numpy.reshape(Y, (1, rows, 1))
     model = Sequential()
-    model.add(Dense(32, input_shape=(columns,rows)))
+
     # model.add(Flatten())
-    model.add(Dense(10, activation='sigmoid'))
+    model.add(Dense(32, input_shape=(rows,columns)))
+    model.add(Dense(1, activation='sigmoid'))
     model.compile(optimizer='adam',
                   loss='binary_crossentropy',
                   metrics=['accuracy'])
-    model.fit(X, Y, epochs=50, batch_size=20)
+    model.fit(X, Y, epochs=200, batch_size=20, verbose=2)
     score = model.evaluate(X, Y, batch_size=20)
 
     print(score)
