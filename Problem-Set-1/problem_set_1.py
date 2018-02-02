@@ -2,10 +2,12 @@ import pandas as panda
 import matplotlib.pyplot as plot
 import numpy as numpy
 import math as math
+import pydot
 
 from matplotlib import cm
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.utils import plot_model
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
@@ -31,8 +33,8 @@ def main():
     X, Y = create_matrix_and_vector_from_data_frame(normalized_data)
     weights = build_model(X, Y)
     visualize_data_3d(normalized_data, weights, plot_flag)
-    test_and_validate_model(X, Y, weights)
-    built_in_model(X,Y)
+    # test_and_validate_model(X, Y, weights)
+    built_in_model(X, Y)
 
 
 def describe_data_frame(dataframe):
@@ -58,6 +60,8 @@ def describe_data_frame(dataframe):
 
     print(str(dataframe.describe()))
     print("\n")
+
+    print(dataframe.corr())
 
 
 def feature_correlation(dataframe):
@@ -295,14 +299,16 @@ def built_in_model(X, Y):
     Y = numpy.reshape(Y, (1, rows, 1))
     model = Sequential()
 
-    #model.add(Dense(2, input_shape=(rows, columns)))
+    # model.add(Dense(2, input_shape=(rows, columns)))
     model.add(Dense(1, input_shape=(rows, columns), activation='sigmoid'))
     model.compile(optimizer='adam',
-                  # loss='binary_crossentropy',
                   loss='mse',
                   metrics=['accuracy'])
-    model.fit(X, Y, epochs=2600, batch_size=32, verbose=2)
-    score = model.evaluate(X, Y, batch_size=32)
+    model.fit(X, Y, epochs=1000, batch_size=45, verbose=0)
+    score = model.evaluate(X, Y, batch_size=45)
+
+    # plot_model(model, to_file='model_2.png', show_shapes=True)
+    print(model.get_weights())
 
     print(score)
 
