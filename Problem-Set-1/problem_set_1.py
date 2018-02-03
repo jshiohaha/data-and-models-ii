@@ -299,7 +299,7 @@ def built_in_model(X, Y):
     Y = numpy.reshape(Y, (1, rows, 1))
     model = Sequential()
 
-    # model.add(Dense(2, input_shape=(rows, columns)))
+    model.add(Dense(1, input_shape=(rows, columns)))
     model.add(Dense(1, input_shape=(rows, columns), activation='sigmoid'))
     model.compile(optimizer='adam',
                   loss='mse',
@@ -308,9 +308,11 @@ def built_in_model(X, Y):
     score = model.evaluate(X, Y, batch_size=45)
 
     # plot_model(model, to_file='model_2.png', show_shapes=True)
-    print(model.get_weights())
+    weights, biases = model.layers[1].get_weights()
+    print(weights)
+    print(biases)
 
-    print(score)
+    # print(score)
 
 
 if __name__ == "__main__":
