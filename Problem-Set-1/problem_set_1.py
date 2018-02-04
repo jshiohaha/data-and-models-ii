@@ -78,6 +78,7 @@ def feature_correlation(dataframe):
     print(">> -- Correlation between Income and Ratio: " + str(income_ratio))
     print("\n")
 
+
 def visualize_data_3d(dataframe, weights=None, plot_flag=False):
     ''' Aimed at visualizing the data in 3D space and then analyzing
         correlations between variables.
