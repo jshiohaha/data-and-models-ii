@@ -1,15 +1,16 @@
-import pandas as pd
-import matplotlib.pyplot as plot
-import numpy as np
-import math as math
-import pydot
 import sys
+import pydot
+import numpy as np
+import pandas as pd
+import math as math
+import matplotlib.pyplot as plot
 
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
 
 # LINKS TO HELPFUL INFORMATION ON KNN...
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
@@ -28,7 +29,7 @@ def main():
 
     filename = 'Data/iris.csv'
     dataframe = load_data_frame(filename)
-    describe_data_frame(dataframe)
+    # describe_data_frame(dataframe)
 
     # features = ['Petal.Length', 'Petal.Width', 'Sepal.Length']
     # visualize_data_3d(dataframe, features, plot_flag=plot_flag)
@@ -36,10 +37,10 @@ def main():
     df_norm = randomize_and_scale_dataset(dataframe)
     # visualize_data_3d(df_norm, features, plot_flag=plot_flag)
 
-    X,Y = create_matrix_and_vector_from_data_frame(dataframe)
+    X,Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
-
+    use_knn(X_train, y_train, X_test, y_test)
 
 def load_data_frame(filename):
     '''
@@ -187,7 +188,49 @@ def create_train_test_set(X, Y, training_set_size=130, testing_set_size=20):
     return X_train, X_test, y_train, y_test
 
 
-def knn_model():
+def generate_integer_encoding(vector):
+    binary_encoding = pd.get_dummies(vector)
+    encoded_vector = binary_encoding.values.argmax(1)
+    return encoded_vector
+
+
+def minkowski_distance(vector0, vector1, p):
+    distance = 0
+    for idx in range(vector0):
+        distance += Math.pow(vector0[idx] - vector1[idx], p)
+    return Math.pow(distance, 1/p)
+
+
+def get_n_neighbors(vector, point, k):
+    '''
+        For any point, in this case, any row in the representing the explanatory
+        variables of the iris dataset, it will take another vector, representing
+        a list of sets of explantory variables. It will calculate the closest
+        k neighbors according to the L_2 distance, also known as Euclidean distance.
+    '''
+    distances = []
+    for idx in range(len(vector)):
+        dist = minkowski_distance(vector[idx], point, 2)
+        distances.append((idx, dist))
+
+    # sort array by the distance attribute, at second index
+    distances.sort(key=operator.itemgetter(1))
+    return distances[:k]
+
+
+# not sure if this works or not... mainly the max() lambda to get the mode of the list
+def get_class_from_n_neighbors(neighbors, vector):
+    species = []
+    for idx in range(len(neighbors)):
+        # append the instance of vector_y to the corresponding
+        # instance from vector_x... should be the species related
+        # to that specific neighbor
+        species.append(vector[neighbors[idx][0]])
+    common_species = max(species, key=species.count)
+    return neighbors
+
+
+def knn_model(xtrain, ytrain, k):
     '''
         1. Write code from scratch to predict the species of each observation in the test set using
         KNN. Experiment with the prediction accuracy by changing K, the number of neighbors.
@@ -198,16 +241,28 @@ def knn_model():
         (Accuracy is determined by comparing your species predictions to the known species.)
 
         TODO... Question 6
-    '''
 
-
-def use_knn():
-    '''
-        Repeat the process from Question 6, but use the knn() function from the class package.
-
-        TODO... Question 7
+        Q: What is serialized from the model to use in the training set?
     '''
     return
+
+
+def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
+    '''
+        Repeat the process from Question 6, but use the knn() function from the class package.
+    '''
+    print(">> Using KNeighborsRegressor from sklearn.neighbors to calculate " + str(n_neighbors) + " nearest neighbors\n")
+
+    encoded_y_train = generate_integer_encoding(Y_train)
+    encoded_y_test = generate_integer_encoding(Y_test)
+
+    knn = KNeighborsRegressor(n_neighbors=n_neighbors)
+    knn.fit(X_train, encoded_y_train)
+    predictions = knn.predict(X_test)
+
+    # Compute the mean squared error of our predictions.
+    mse = mean_squared_error(predictions, encoded_y_test)
+    print("Mean squared error: " + str(mse))
 
 
 '''
