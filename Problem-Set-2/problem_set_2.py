@@ -6,10 +6,15 @@ import math as Math
 import matplotlib.pyplot as plot
 import operator
 
+
+from keras.layers import Dense
+from keras.models import Sequential
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import np_utils
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
 
@@ -27,6 +32,7 @@ def main():
         results. Each function itself describes what it's doing along
         with the parts of the problem set question it addresses.
     '''
+
     plot_flag = True
 
     filename = 'Data/iris.csv'
@@ -41,9 +47,10 @@ def main():
 
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
-    X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
+    # X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
     # knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
-    use_knn(X_train, y_train, X_test, y_test)
+    # use_knn(X_train, y_train, X_test, y_test)
+    ann(X, Y)
 
 
 def load_data_frame(filename):
@@ -290,6 +297,31 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
     print("Mean squared error: " + str(mse))
 
 
+# define baseline model
+def baseline_model():
+    # create model
+    model = Sequential()
+    model.add(Dense(8, input_dim=4, activation='relu'))
+    model.add(Dense(3, activation='softmax'))
+    # Compile model
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+
+def ann(x, y):
+    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
+    kfold = KFold(n_splits=10, shuffle=True)
+    encoder = LabelEncoder()
+    encoder.fit(y)
+    encoded_y = encoder.transform(y)
+    # convert integers to dummy variables (i.e. one hot encoded)
+    dummy_y = np_utils.to_categorical(encoded_y)
+
+    results = cross_val_score(estimator, x, dummy_y, cv=kfold)
+    print(results)
+    # print("Baseline: {} ({})".format(results.mean() * 100, results.std() * 100))
+    return
+
 '''
 >> OUTSTANDING PROBLEMS TO CREATE FUNCTIONS FOR + DO...
 
@@ -301,7 +333,7 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
         - Suggest using class.ind( ) from the nnet package for one hot encoding, but this is also easily hand coded.
         - Make a formula using as.formula( ) for use with neuralnet( ) of the form: y1 + y2 + y3 ~ x1 + x2 + x3 + x4
         - Plot the model network
-    
+
     Question 9
         - Predict the species for each observation in the test set. Display the comparisons between actual and
           predicted. Use the numeric, not binary, version of predicted results. Choose a meaningful display type.
