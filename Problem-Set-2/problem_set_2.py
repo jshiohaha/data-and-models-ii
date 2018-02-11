@@ -2,8 +2,9 @@ import sys
 import pydot
 import numpy as np
 import pandas as pd
-import math as math
+import math as Math
 import matplotlib.pyplot as plot
+import operator
 
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
@@ -14,6 +15,7 @@ from sklearn.metrics import mean_squared_error, confusion_matrix, classification
 
 # LINKS TO HELPFUL INFORMATION ON KNN...
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
+
 
 def main():
     '''
@@ -37,13 +39,13 @@ def main():
     df_norm = randomize_and_scale_dataset(dataframe)
     # visualize_data_3d(df_norm, features, plot_flag=plot_flag)
 
-    X,Y = create_matrix_and_vector_from_data_frame(df_norm)
+    X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
-    k = 5
-    prediction = knn_model(X_train, y_train, X_test, k)
-    confusion_matrix(prediction, y_test)
-    use_knn(X_train, y_train, X_test, y_test)
+    k = 10
+    knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
+    # use_knn(X_train, y_train, X_test, y_test)
+
 
 def load_data_frame(filename):
     '''
@@ -199,9 +201,9 @@ def generate_integer_encoding(vector):
 
 def minkowski_distance(vector0, vector1, p):
     distance = 0
-    for idx in range(vector0):
-        distance += Math.pow(vector0[idx] - vector1[idx], p)
-    return Math.pow(distance, 1/p)
+    for idx in range(len(vector0)):
+        distance += (vector0[idx] - vector1[idx]) ** p
+        return Math.pow(distance, 1/p)
 
 
 def get_n_neighbors(vector, point, k):
@@ -256,12 +258,12 @@ def knn_model(xtrain, ytrain, xtest, k):
 
 def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
     accuracy = []
-    for i in range(k):
-        prediction = knn_model(xtrain, ytrain, xtest, k)
-        print("Confusion matrix with K = {}".format(k))
+    for i in range(1, k + 1):
+        prediction = knn_model(xtrain, ytrain, xtest, i)
+        print("Confusion matrix with K = {}".format(i))
         print(confusion_matrix(prediction, ytest))
         accuracy.append(accuracy_score(prediction, ytest))
-
+    print(accuracy)
     # TODO: Plot accuracy
 
 
