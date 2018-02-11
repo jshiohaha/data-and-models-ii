@@ -35,10 +35,10 @@ def main():
 
     # features = ['Petal.Length', 'Petal.Width', 'Sepal.Length']
     # visualize_data_3d(dataframe, features, plot_flag=plot_flag)
-
+    # find_and_plot_correlation(dataframe)
     df_norm = randomize_and_scale_dataset(dataframe)
     # visualize_data_3d(df_norm, features, plot_flag=plot_flag)
-
+    find_and_plot_correlation(df_norm)
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
@@ -139,8 +139,26 @@ def find_and_plot_correlation(dataframe):
 
         TODO...
     '''
-    return
+    print(">> Calculating correlations between the explanatory variables")
 
+    sepalLW = np.correlate(dataframe['Sepal.Length'], dataframe['Sepal.Width'])
+    print(">> -- Correlation between Sepal.Length and Sepal.Width: " + str(sepalLW))
+
+    sepalLPetalL = np.correlate(dataframe['Sepal.Length'], dataframe['Petal.Length'])
+    print(">> -- Correlation between Sepal.Length and Petal.Length: " + str(sepalLPetalL))
+
+    sepalLPetalW = np.correlate(dataframe['Sepal.Length'], dataframe['Petal.Width'])
+    print(">> -- Correlation between Sepal.Length and Petal.Width: " + str(sepalLPetalW))
+
+    sepalWPetalW = np.correlate(dataframe['Sepal.Width'], dataframe['Petal.Width'])
+    print(">> -- Correlation between Sepal.Width and Petal.Width: " + str(sepalWPetalW))
+
+    sepalWPetalL = np.correlate(dataframe['Sepal.Width'], dataframe['Petal.Length'])
+    print(">> -- Correlation between Sepal.Width and Petal.Length: " + str(sepalWPetalL))
+
+    petalLW = np.correlate(dataframe['Petal.Length'], dataframe['Petal.Width'])
+    print(">> -- Correlation between Petal.Length and Petal.Width: " + str(petalLW))
+    print("\n")
 
 def randomize_and_scale_dataset(dataframe):
     '''
@@ -155,7 +173,7 @@ def randomize_and_scale_dataset(dataframe):
     scaler = MinMaxScaler()
     scaled_data_array = scaler.fit_transform(explanatory_variables_df)
     df_norm = pd.DataFrame(scaled_data_array, index=explanatory_variables_df.index, columns=explanatory_variables_df.columns)
-    
+
     describe_data_frame(df_norm)
 
     print(">> Randomizing observations for subsequent use\n")
@@ -296,7 +314,7 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
         - Suggest using class.ind( ) from the nnet package for one hot encoding, but this is also easily hand coded.
         - Make a formula using as.formula( ) for use with neuralnet( ) of the form: y1 + y2 + y3 ~ x1 + x2 + x3 + x4
         - Plot the model network
-    
+
     Question 9
         - Predict the species for each observation in the test set. Display the comparisons between actual and
           predicted. Use the numeric, not binary, version of predicted results. Choose a meaningful display type.
@@ -306,7 +324,7 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
         - Display the confusion table for each species prediction. Suggest using table(actual = y1test, predicted = …)
         - Display accuracy and error rates from the confusion tables. Suggest using table(), diag(), and sum(). Note that
           table( ) values are stored columnwise.
-    
+
     Question 10
         - Using your ANN model, experiment with the number of hidden nodes. What structure of layers and nodes
           produces the best accuracy on the test set relative to the number of layers, nodes, and model solution time?
