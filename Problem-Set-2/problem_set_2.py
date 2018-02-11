@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
+from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
 
 # LINKS TO HELPFUL INFORMATION ON KNN...
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
@@ -40,6 +40,9 @@ def main():
     X,Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
+    k = 5
+    prediction = knn_model(X_train, y_train, X_test, k)
+    confusion_matrix(prediction, y_test)
     use_knn(X_train, y_train, X_test, y_test)
 
 def load_data_frame(filename):
@@ -227,10 +230,10 @@ def get_class_from_n_neighbors(neighbors, vector):
         # to that specific neighbor
         species.append(vector[neighbors[idx][0]])
     common_species = max(species, key=species.count)
-    return neighbors
+    return common_species
 
 
-def knn_model(xtrain, ytrain, k):
+def knn_model(xtrain, ytrain, xtest, k):
     '''
         1. Write code from scratch to predict the species of each observation in the test set using
         KNN. Experiment with the prediction accuracy by changing K, the number of neighbors.
@@ -244,7 +247,22 @@ def knn_model(xtrain, ytrain, k):
 
         Q: What is serialized from the model to use in the training set?
     '''
-    return
+    prediction = []
+    for idx in range(len(xtest)):
+        neighbors = get_n_neighbors(xtrain, xtest[idx], k)
+        prediction.append(get_class_from_n_neighbors(neighbors, ytrain))
+    return prediction
+
+
+def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
+    accuracy = []
+    for i in range(k):
+        prediction = knn_model(xtrain, ytrain, xtest, k)
+        print("Confusion matrix with K = {}".format(k))
+        print(confusion_matrix(prediction, ytest))
+        accuracy.append(accuracy_score(prediction, ytest))
+
+    # TODO: Plot accuracy
 
 
 def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
