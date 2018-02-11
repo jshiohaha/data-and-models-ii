@@ -42,9 +42,8 @@ def main():
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
-    k = 10
-    knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
-    # use_knn(X_train, y_train, X_test, y_test)
+    # knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
+    use_knn(X_train, y_train, X_test, y_test)
 
 
 def load_data_frame(filename):
@@ -120,8 +119,7 @@ def visualize_data_3d(dataframe, features, weights=None, plot_flag=False):
         temp_x = temp_df[features[0]]
         temp_y = temp_df[features[1]]
         temp_z = temp_df[features[2]]
-        ax.scatter(temp_x,temp_y,temp_z, color=colors[i], label= species_arr[i] + ' species')
-
+        ax.scatter(temp_x, temp_y, temp_z, color=colors[i], label= species_arr[i] + ' species')
 
     ax.set_xlabel(features[0])
     ax.set_ylabel(features[1])
@@ -129,7 +127,6 @@ def visualize_data_3d(dataframe, features, weights=None, plot_flag=False):
 
     ax.legend()
     plot.show()
-
 
 
 def find_and_plot_correlation(dataframe):
@@ -155,7 +152,7 @@ def randomize_and_scale_dataset(dataframe):
     scaler = MinMaxScaler()
     scaled_data_array = scaler.fit_transform(explanatory_variables_df)
     df_norm = pd.DataFrame(scaled_data_array, index=explanatory_variables_df.index, columns=explanatory_variables_df.columns)
-    
+
     describe_data_frame(df_norm)
 
     print(">> Randomizing observations for subsequent use\n")
@@ -195,7 +192,10 @@ def create_train_test_set(X, Y, training_set_size=130, testing_set_size=20):
 
 def generate_integer_encoding(vector):
     binary_encoding = pd.get_dummies(vector)
+    print(binary_encoding)
     encoded_vector = binary_encoding.values.argmax(1)
+    print(encoded_vector)
+    sys.exit()
     return encoded_vector
 
 
@@ -260,6 +260,11 @@ def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
     accuracy = []
     for i in range(1, k + 1):
         prediction = knn_model(xtrain, ytrain, xtest, i)
+
+        for j, p in enumerate(prediction):
+            print("Prediction: " + str(p) + " vs. Actual: " + str(ytest[j]))
+
+        sys.exit()
         print("Confusion matrix with K = {}".format(i))
         print(confusion_matrix(prediction, ytest))
         accuracy.append(accuracy_score(prediction, ytest))
