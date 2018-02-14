@@ -6,10 +6,15 @@ import math as Math
 import matplotlib.pyplot as plot
 import operator
 
+
+from keras.layers import Dense
+from keras.models import Sequential
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import np_utils
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
 
@@ -27,6 +32,7 @@ def main():
         results. Each function itself describes what it's doing along
         with the parts of the problem set question it addresses.
     '''
+
     plot_flag = True
 
     filename = 'Data/iris.csv'
@@ -35,16 +41,16 @@ def main():
 
     # features = ['Petal.Length', 'Petal.Width', 'Sepal.Length']
     # visualize_data_3d(dataframe, features, plot_flag=plot_flag)
-
+    # find_and_plot_correlation(dataframe)
     df_norm = randomize_and_scale_dataset(dataframe)
     # visualize_data_3d(df_norm, features, plot_flag=plot_flag)
-
+    find_and_plot_correlation(df_norm)
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
-    X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
-    k = 10
-    knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
+    # X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
+    # knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
     # use_knn(X_train, y_train, X_test, y_test)
+    ann(X, Y)
 
 
 def load_data_frame(filename):
@@ -120,8 +126,7 @@ def visualize_data_3d(dataframe, features, weights=None, plot_flag=False):
         temp_x = temp_df[features[0]]
         temp_y = temp_df[features[1]]
         temp_z = temp_df[features[2]]
-        ax.scatter(temp_x,temp_y,temp_z, color=colors[i], label= species_arr[i] + ' species')
-
+        ax.scatter(temp_x, temp_y, temp_z, color=colors[i], label= species_arr[i] + ' species')
 
     ax.set_xlabel(features[0])
     ax.set_ylabel(features[1])
@@ -131,7 +136,6 @@ def visualize_data_3d(dataframe, features, weights=None, plot_flag=False):
     plot.show()
 
 
-
 def find_and_plot_correlation(dataframe):
     '''
         Graphically display the correlation among the features (explanatory variables.)
@@ -139,8 +143,26 @@ def find_and_plot_correlation(dataframe):
 
         TODO... Ask Kecky boi if he wants a graphical representation of the correlation
     '''
-    return
+    print(">> Calculating correlations between the explanatory variables")
 
+    sepalLW = np.correlate(dataframe['Sepal.Length'], dataframe['Sepal.Width'])
+    print(">> -- Correlation between Sepal.Length and Sepal.Width: " + str(sepalLW))
+
+    sepalLPetalL = np.correlate(dataframe['Sepal.Length'], dataframe['Petal.Length'])
+    print(">> -- Correlation between Sepal.Length and Petal.Length: " + str(sepalLPetalL))
+
+    sepalLPetalW = np.correlate(dataframe['Sepal.Length'], dataframe['Petal.Width'])
+    print(">> -- Correlation between Sepal.Length and Petal.Width: " + str(sepalLPetalW))
+
+    sepalWPetalW = np.correlate(dataframe['Sepal.Width'], dataframe['Petal.Width'])
+    print(">> -- Correlation between Sepal.Width and Petal.Width: " + str(sepalWPetalW))
+
+    sepalWPetalL = np.correlate(dataframe['Sepal.Width'], dataframe['Petal.Length'])
+    print(">> -- Correlation between Sepal.Width and Petal.Length: " + str(sepalWPetalL))
+
+    petalLW = np.correlate(dataframe['Petal.Length'], dataframe['Petal.Width'])
+    print(">> -- Correlation between Petal.Length and Petal.Width: " + str(petalLW))
+    print("\n")
 
 def randomize_and_scale_dataset(dataframe):
     '''
@@ -155,7 +177,7 @@ def randomize_and_scale_dataset(dataframe):
     scaler = MinMaxScaler()
     scaled_data_array = scaler.fit_transform(explanatory_variables_df)
     df_norm = pd.DataFrame(scaled_data_array, index=explanatory_variables_df.index, columns=explanatory_variables_df.columns)
-    
+
     describe_data_frame(df_norm)
 
     print(">> Randomizing observations for subsequent use\n")
@@ -195,7 +217,10 @@ def create_train_test_set(X, Y, training_set_size=130, testing_set_size=20):
 
 def generate_integer_encoding(vector):
     binary_encoding = pd.get_dummies(vector)
+    print(binary_encoding)
     encoded_vector = binary_encoding.values.argmax(1)
+    print(encoded_vector)
+    sys.exit()
     return encoded_vector
 
 
@@ -255,6 +280,11 @@ def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
     accuracy = []
     for i in range(1, k + 1):
         prediction = knn_model(xtrain, ytrain, xtest, i)
+
+        for j, p in enumerate(prediction):
+            print("Prediction: " + str(p) + " vs. Actual: " + str(ytest[j]))
+
+        sys.exit()
         print("Confusion matrix with K = {}".format(i))
         print(confusion_matrix(prediction, ytest))
         accuracy.append(accuracy_score(prediction, ytest))
@@ -288,6 +318,31 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
     print("Mean squared error: " + str(mse))
 
 
+# define baseline model
+def baseline_model():
+    # create model
+    model = Sequential()
+    model.add(Dense(8, input_dim=4, activation='relu'))
+    model.add(Dense(3, activation='softmax'))
+    # Compile model
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+
+def ann(x, y):
+    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
+    kfold = KFold(n_splits=10, shuffle=True)
+    encoder = LabelEncoder()
+    encoder.fit(y)
+    encoded_y = encoder.transform(y)
+    # convert integers to dummy variables (i.e. one hot encoded)
+    dummy_y = np_utils.to_categorical(encoded_y)
+
+    results = cross_val_score(estimator, x, dummy_y, cv=kfold)
+    print(results)
+    # print("Baseline: {} ({})".format(results.mean() * 100, results.std() * 100))
+    return
+
 '''
 >> OUTSTANDING PROBLEMS TO CREATE FUNCTIONS FOR + DO...
 
@@ -299,7 +354,7 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
         - Suggest using class.ind( ) from the nnet package for one hot encoding, but this is also easily hand coded.
         - Make a formula using as.formula( ) for use with neuralnet( ) of the form: y1 + y2 + y3 ~ x1 + x2 + x3 + x4
         - Plot the model network
-    
+
     Question 9
         - Predict the species for each observation in the test set. Display the comparisons between actual and
           predicted. Use the numeric, not binary, version of predicted results. Choose a meaningful display type.
@@ -309,7 +364,7 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
         - Display the confusion table for each species prediction. Suggest using table(actual = y1test, predicted = …)
         - Display accuracy and error rates from the confusion tables. Suggest using table(), diag(), and sum(). Note that
           table( ) values are stored columnwise.
-    
+
     Question 10
         - Using your ANN model, experiment with the number of hidden nodes. What structure of layers and nodes
           produces the best accuracy on the test set relative to the number of layers, nodes, and model solution time?
