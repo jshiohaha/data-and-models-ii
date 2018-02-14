@@ -137,7 +137,7 @@ def find_and_plot_correlation(dataframe):
         Graphically display the correlation among the features (explanatory variables.)
         Comment.
 
-        TODO...
+        TODO... Ask Kecky boi if he wants a graphical representation of the correlation
     '''
     return
 
@@ -217,13 +217,11 @@ def get_n_neighbors(vector, point, k):
     for idx in range(len(vector)):
         dist = minkowski_distance(vector[idx], point, 2)
         distances.append((idx, dist))
-
     # sort array by the distance attribute, at second index
     distances.sort(key=operator.itemgetter(1))
     return distances[:k]
 
 
-# not sure if this works or not... mainly the max() lambda to get the mode of the list
 def get_class_from_n_neighbors(neighbors, vector):
     species = []
     for idx in range(len(neighbors)):
@@ -244,10 +242,6 @@ def knn_model(xtrain, ytrain, xtest, k):
         2. Display your comparisons as well as accuracy and error rates. Include a confusion
         matrix as well as a line plot for acccuracy rate (vertical axis) v. K (horizonatal axis). Suggest that table( … , …) be included.
         (Accuracy is determined by comparing your species predictions to the known species.)
-
-        TODO... Question 6
-
-        Q: What is serialized from the model to use in the training set?
     '''
     prediction = []
     for idx in range(len(xtest)):
@@ -257,6 +251,7 @@ def knn_model(xtrain, ytrain, xtest, k):
 
 
 def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
+    print(">> Calculating how size of k from 1 to " + str(k) + " affects accuracy\n")
     accuracy = []
     for i in range(1, k + 1):
         prediction = knn_model(xtrain, ytrain, xtest, i)
@@ -264,7 +259,15 @@ def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
         print(confusion_matrix(prediction, ytest))
         accuracy.append(accuracy_score(prediction, ytest))
     print(accuracy)
-    # TODO: Plot accuracy
+
+    print(">> Plotting Accuracy vs. K\n")
+    x_arr = np.arange(1, len(accuracy)+1, 1)
+    plot.title('Accuracy vs. K')
+    plot.xlabel('Size of K')
+    plot.ylabel('Accuracy')
+    plot.plot(x_arr, accuracy, 'ro')
+    plot.axis([0, len(accuracy), 0, 1])
+    plot.show()
 
 
 def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
