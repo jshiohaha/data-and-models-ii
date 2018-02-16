@@ -7,10 +7,11 @@ import matplotlib.pyplot as plot
 import operator
 
 
-from keras.layers import Dense
+from keras.layers import Dense, Activation
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.utils import np_utils
+from keras.utils.vis_utils import plot_model
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
@@ -47,10 +48,12 @@ def main():
     find_and_plot_correlation(df_norm)
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
-    # X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
+    X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
     # knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
     # use_knn(X_train, y_train, X_test, y_test)
-    ann(X, Y)
+    # ann(X, Y)
+
+    ann_model(X_train, Y_train, X_test, Y_test)
 
 
 def load_data_frame(filename):
@@ -164,6 +167,7 @@ def find_and_plot_correlation(dataframe):
     print(">> -- Correlation between Petal.Length and Petal.Width: " + str(petalLW))
     print("\n")
 
+
 def randomize_and_scale_dataset(dataframe):
     '''
         1. Since the observations are grouped by species, randomize the observations for subsequent
@@ -204,24 +208,24 @@ def create_train_test_set(X, Y, training_set_size=130, testing_set_size=20):
     '''
     print(">> Creating testing and training datasets\n")
     test_size = testing_set_size / (training_set_size + testing_set_size)
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=42)
 
     print('Length of X training set: ' + str(len(X_train)))
-    print('Length of Y training set: ' + str(len(y_train)))
+    print('Length of Y training set: ' + str(len(Y_train)))
 
     print('Length of X testing set: ' + str(len(X_test)))
-    print('Length of Y testing set: ' + str(len(y_test)) + '\n')
+    print('Length of Y testing set: ' + str(len(Y_test)) + '\n')
 
-    return X_train, X_test, y_train, y_test
+    Y_train_ohe = generate_integer_encoding(Y_train)
+    Y_test_ohe = generate_integer_encoding(Y_test)
+
+    return X_train, X_test, Y_train_ohe, Y_test_ohe
 
 
 def generate_integer_encoding(vector):
     binary_encoding = pd.get_dummies(vector)
-    print(binary_encoding)
-    encoded_vector = binary_encoding.values.argmax(1)
-    print(encoded_vector)
-    sys.exit()
-    return encoded_vector
+    # encoded_vector = binary_encoding.values.argmax(1)
+    return binary_encoding
 
 
 def minkowski_distance(vector0, vector1, p):
@@ -342,6 +346,27 @@ def ann(x, y):
     print(results)
     # print("Baseline: {} ({})".format(results.mean() * 100, results.std() * 100))
     return
+
+
+def ann_model(X_train, Y_train, X_test, Y_test):
+    model = Sequential()
+
+    model.add(Dense(16, input_shape=(4,), activation='sigmoid'))
+
+    model.add(Dense(3, activation='softmax'))
+
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    model.fit(X_train, Y_train, epochs=100, batch_size=1, verbose=0)
+
+    print(model.summary())
+    plot_model(model, to_file='model.png', show_shapes=True)
+
+    loss, accuracy = model.evaluate(X_test, Y_test, verbose=1)
+    print("Accuracy = {:.2f}".format(accuracy))
+
+    return
+
 
 '''
 >> OUTSTANDING PROBLEMS TO CREATE FUNCTIONS FOR + DO...
