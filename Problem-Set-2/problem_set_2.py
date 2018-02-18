@@ -49,9 +49,6 @@ def main():
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
-    # knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
-    # use_knn(X_train, y_train, X_test, y_test)
-    # ann(X, Y)
 
     ann_model(X_train, Y_train, X_test, Y_test)
 
@@ -322,32 +319,6 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
     print("Mean squared error: " + str(mse))
 
 
-# define baseline model
-def baseline_model():
-    # create model
-    model = Sequential()
-    model.add(Dense(8, input_dim=4, activation='relu'))
-    model.add(Dense(3, activation='softmax'))
-    # Compile model
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-    return model
-
-
-def ann(x, y):
-    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
-    kfold = KFold(n_splits=10, shuffle=True)
-    encoder = LabelEncoder()
-    encoder.fit(y)
-    encoded_y = encoder.transform(y)
-    # convert integers to dummy variables (i.e. one hot encoded)
-    dummy_y = np_utils.to_categorical(encoded_y)
-
-    results = cross_val_score(estimator, x, dummy_y, cv=kfold)
-    print(results)
-    # print("Baseline: {} ({})".format(results.mean() * 100, results.std() * 100))
-    return
-
-
 def ann_model(X_train, Y_train, X_test, Y_test):
     model = Sequential()
 
@@ -383,7 +354,7 @@ def ann_model(X_train, Y_train, X_test, Y_test):
     # Question 9: confusion table
     print(confusion_matrix(activated_prediction.argmax(axis=1), Y_test.values.argmax(axis=1)))
 
-    # TODO: Display accuracy / error rates from table
+    # TODO: Display accuracy / error rates from tabl
 
     return
 
