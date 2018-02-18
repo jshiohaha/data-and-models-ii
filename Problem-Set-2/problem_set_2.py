@@ -21,7 +21,6 @@ from sklearn.metrics import mean_squared_error, confusion_matrix, classification
 # LINKS TO HELPFUL INFORMATION ON KNN...
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 
-
 def main():
     '''
         Solution for Problem Set 2 in Data & Models II (RAIK 370H)
@@ -47,10 +46,10 @@ def main():
     find_and_plot_correlation(df_norm)
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
-    # X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
-    # knn_calculate_accuracy(X_train, y_train, X_test, y_test, k)
+    X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
+    knn_calculate_accuracy(X_train, y_train, X_test, y_test)
     # use_knn(X_train, y_train, X_test, y_test)
-    ann(X, Y)
+    # ann(X, Y)
 
 
 def load_data_frame(filename):
@@ -219,8 +218,6 @@ def generate_integer_encoding(vector):
     binary_encoding = pd.get_dummies(vector)
     print(binary_encoding)
     encoded_vector = binary_encoding.values.argmax(1)
-    print(encoded_vector)
-    sys.exit()
     return encoded_vector
 
 
@@ -269,8 +266,8 @@ def knn_model(xtrain, ytrain, xtest, k):
         (Accuracy is determined by comparing your species predictions to the known species.)
     '''
     prediction = []
-    for idx in range(len(xtest)):
-        neighbors = get_n_neighbors(xtrain, xtest[idx], k)
+    for idx, element in enumerate(xtest):
+        neighbors = get_n_neighbors(xtrain, element, k)
         prediction.append(get_class_from_n_neighbors(neighbors, ytrain))
     return prediction
 
@@ -279,15 +276,17 @@ def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
     print(">> Calculating how size of k from 1 to " + str(k) + " affects accuracy\n")
     accuracy = []
     for i in range(1, k + 1):
+        print(">> Testing knn model when K = {}".format(i))
+
         prediction = knn_model(xtrain, ytrain, xtest, i)
 
         for j, p in enumerate(prediction):
             print("Prediction: " + str(p) + " vs. Actual: " + str(ytest[j]))
 
-        sys.exit()
         print("Confusion matrix with K = {}".format(i))
         print(confusion_matrix(prediction, ytest))
         accuracy.append(accuracy_score(prediction, ytest))
+
     print(accuracy)
 
     print(">> Plotting Accuracy vs. K\n")
