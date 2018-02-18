@@ -359,11 +359,31 @@ def ann_model(X_train, Y_train, X_test, Y_test):
 
     model.fit(X_train, Y_train, epochs=100, batch_size=1, verbose=0)
 
+    # Question 8: Plot model network
     print(model.summary())
     plot_model(model, to_file='model.png', show_shapes=True)
 
-    loss, accuracy = model.evaluate(X_test, Y_test, verbose=1)
-    print("Accuracy = {:.2f}".format(accuracy))
+    # Question 9: Predict
+    # TODO: Display meaningful display type
+    prediction = model.predict(X_test)
+    print(prediction)
+    print(Y_test)
+
+    # Question 9: RMSE Error
+    # TODO: Maybe make for each category?? idk
+    loss, acc = model.evaluate(X_test, Y_test, verbose=1)
+    print(model.metrics_names)
+    print("Loss: {}. Accuracy: {}".format(loss, acc))
+
+    # Question 9: Display actual and predicted values
+    print(prediction)
+    activated_prediction = np.round_(prediction)
+    print(activated_prediction)
+
+    # Question 9: confusion table
+    print(confusion_matrix(activated_prediction.argmax(axis=1), Y_test.values.argmax(axis=1)))
+
+    # TODO: Display accuracy / error rates from table
 
     return
 
