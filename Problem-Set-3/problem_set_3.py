@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import Imputer
 
 
 def main():
@@ -12,22 +13,41 @@ def main():
 
 def titanic():
     filename = 'data/titanic_train.csv'
-    train = load_data_frame(filename).dropna()
+    train = load_data_frame(filename)
 
     X_train, Y_train = split_data_frame(train, 'Survived')
-    X_train = X_train.drop(["Name", "Sex", "Ticket", "Cabin", "Embarked"], axis=1).astype(np.float32)
-
     describe_data_frame(X_train)
+    X_train["Sex"] = encode_column(X_train, "Sex")
+    X_train["Embarked"] = encode_column(X_train, "Embarked")
+
+    X_train = X_train.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
+
+    imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
+    imp = imp.fit(X_train)
+
+    X_train_imp = imp.transform(X_train)
 
     clf = RandomForestClassifier()
-    clf.fit(X_train, Y_train)
+    clf.fit(X_train_imp, Y_train)
 
     filename = 'data/titanic_test.csv'
-    X_test = load_data_frame(filename).dropna()
+    X_test = load_data_frame(filename)
 
-    X_test = X_test.drop(["Name", "Sex", "Ticket", "Cabin", "Embarked"], axis=1).astype(np.float32)
+    X_test["Sex"] = encode_column(X_test, "Sex")
+    X_test["Embarked"] = encode_column(X_test, "Embarked")
+    X_test = X_test.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
 
-    print(clf.predict(X_test))
+    imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
+    imp = imp.fit(X_test)
+
+    X_test_imp = imp.transform(X_test)
+
+    print(len(X_test_imp))
+
+    Y_test = clf.predict(X_test_imp)
+
+    answer = X_test["PassengerId"].append(Y_test)
+    answer.to_csv('titanic_output.csv')
 
     return
 
