@@ -6,11 +6,11 @@ import math as Math
 import matplotlib.pyplot as plot
 import operator
 
-
-from keras.layers import Dense
+from keras.layers import Dense, Activation
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.utils import np_utils
+from keras.utils.vis_utils import plot_model
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
@@ -42,14 +42,18 @@ def main():
     # visualize_data_3d(dataframe, features, plot_flag=plot_flag)
     # find_and_plot_correlation(dataframe)
     df_norm = randomize_and_scale_dataset(dataframe)
+
     # visualize_data_3d(df_norm, features, plot_flag=plot_flag)
-    find_and_plot_correlation(df_norm)
+    # find_and_plot_correlation(df_norm)
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
     X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
     knn_calculate_accuracy(X_train, y_train, X_test, y_test)
+
     # use_knn(X_train, y_train, X_test, y_test)
     # ann(X, Y)
+
+    # ann_model(X_train, Y_train, X_test, Y_test)
 
 
 def load_data_frame(filename):
@@ -163,6 +167,7 @@ def find_and_plot_correlation(dataframe):
     print(">> -- Correlation between Petal.Length and Petal.Width: " + str(petalLW))
     print("\n")
 
+
 def randomize_and_scale_dataset(dataframe):
     '''
         1. Since the observations are grouped by species, randomize the observations for subsequent
@@ -203,22 +208,23 @@ def create_train_test_set(X, Y, training_set_size=130, testing_set_size=20):
     '''
     print(">> Creating testing and training datasets\n")
     test_size = testing_set_size / (training_set_size + testing_set_size)
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=42)
 
     print('Length of X training set: ' + str(len(X_train)))
-    print('Length of Y training set: ' + str(len(y_train)))
+    print('Length of Y training set: ' + str(len(Y_train)))
 
     print('Length of X testing set: ' + str(len(X_test)))
-    print('Length of Y testing set: ' + str(len(y_test)) + '\n')
+    print('Length of Y testing set: ' + str(len(Y_test)) + '\n')
 
-    return X_train, X_test, y_train, y_test
+    Y_train_ohe = generate_integer_encoding(Y_train)
+    Y_test_ohe = generate_integer_encoding(Y_test)
+
+    return X_train, X_test, Y_train, Y_test
 
 
 def generate_integer_encoding(vector):
     binary_encoding = pd.get_dummies(vector)
-    print(binary_encoding)
-    encoded_vector = binary_encoding.values.argmax(1)
-    return encoded_vector
+    return binary_encoding
 
 
 def minkowski_distance(vector0, vector1, p):
@@ -275,6 +281,7 @@ def knn_model(xtrain, ytrain, xtest, k):
 def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
     print(">> Calculating how size of k from 1 to " + str(k) + " affects accuracy\n")
     accuracy = []
+    error = []
     for i in range(1, k + 1):
         print(">> Testing knn model when K = {}".format(i))
 
@@ -285,15 +292,24 @@ def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
 
         print("Confusion matrix with K = {}".format(i))
         print(confusion_matrix(prediction, ytest))
-        accuracy.append(accuracy_score(prediction, ytest))
+        acc_score = accuracy_score(prediction, ytest)
+        accuracy.append(acc_score)
+        error.append(1-acc_score)
 
     print(accuracy)
 
     print(">> Plotting Accuracy vs. K\n")
-    x_arr = np.arange(1, len(accuracy)+1, 1)
+    x_axis = np.arange(1, len(accuracy)+1, 1)
+
+    plot.plot(x_axis, accuracy, color='g')
+    plot.plot(x_axis, error, color='r')
+
     plot.title('Accuracy vs. K')
     plot.xlabel('Size of K')
     plot.ylabel('Accuracy')
+    plot.show()
+
+
     plot.plot(x_arr, accuracy, 'ro')
     plot.axis([0, len(accuracy), 0, 1])
     plot.show()
@@ -317,30 +333,45 @@ def use_knn(X_train, Y_train, X_test, Y_test, n_neighbors=5):
     print("Mean squared error: " + str(mse))
 
 
-# define baseline model
-def baseline_model():
-    # create model
+def ann_model(X_train, Y_train, X_test, Y_test):
     model = Sequential()
-    model.add(Dense(8, input_dim=4, activation='relu'))
+
+    model.add(Dense(16, input_shape=(4,), activation='sigmoid'))
+
     model.add(Dense(3, activation='softmax'))
-    # Compile model
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-    return model
 
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-def ann(x, y):
-    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
-    kfold = KFold(n_splits=10, shuffle=True)
-    encoder = LabelEncoder()
-    encoder.fit(y)
-    encoded_y = encoder.transform(y)
-    # convert integers to dummy variables (i.e. one hot encoded)
-    dummy_y = np_utils.to_categorical(encoded_y)
+    model.fit(X_train, Y_train, epochs=100, batch_size=1, verbose=0)
 
-    results = cross_val_score(estimator, x, dummy_y, cv=kfold)
-    print(results)
-    # print("Baseline: {} ({})".format(results.mean() * 100, results.std() * 100))
+    # Question 8: Plot model network
+    print(model.summary())
+    plot_model(model, to_file='model.png', show_shapes=True)
+
+    # Question 9: Predict
+    # TODO: Display meaningful display type
+    prediction = model.predict(X_test)
+    print(prediction)
+    print(Y_test)
+
+    # Question 9: RMSE Error
+    # TODO: Maybe make for each category?? idk
+    loss, acc = model.evaluate(X_test, Y_test, verbose=1)
+    print(model.metrics_names)
+    print("Loss: {}. Accuracy: {}".format(loss, acc))
+
+    # Question 9: Display actual and predicted values
+    print(prediction)
+    activated_prediction = np.round_(prediction)
+    print(activated_prediction)
+
+    # Question 9: confusion table
+    print(confusion_matrix(activated_prediction.argmax(axis=1), Y_test.values.argmax(axis=1)))
+
+    # TODO: Display accuracy / error rates from tabl
+
     return
+
 
 '''
 >> OUTSTANDING PROBLEMS TO CREATE FUNCTIONS FOR + DO...
