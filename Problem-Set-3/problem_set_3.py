@@ -12,42 +12,64 @@ def main():
 
 
 def titanic():
-    filename = 'data/titanic_train.csv'
+    # Get training data
+    filename = "data/titanic_train.csv"
     train = load_data_frame(filename)
 
-    X_train, Y_train = split_data_frame(train, 'Survived')
-    describe_data_frame(X_train)
+    # Split to X and Y
+    X_train, Y_train = split_data_frame(train, "Survived")
+
+    # describe_data_frame(X_train)
+
+    # Encode the Sex and Embarked objects
     X_train["Sex"] = encode_column(X_train, "Sex")
     X_train["Embarked"] = encode_column(X_train, "Embarked")
 
+    # Convert title to useable encoded value
+    X_train = convert_title(X_train)
+
+    # Drop the objects that can't be encoded, convert floats to float32
     X_train = X_train.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
 
-    imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
+    # Create and imputer that fills in NaN's with the mean value
+    imp = Imputer(missing_values="NaN", strategy="mean", axis=0)
     imp = imp.fit(X_train)
-
     X_train_imp = imp.transform(X_train)
 
+    # Create random Forest Classifier, fit
     clf = RandomForestClassifier()
     clf.fit(X_train_imp, Y_train)
 
-    filename = 'data/titanic_test.csv'
+    # Get testing data
+    filename = "data/titanic_test.csv"
     X_test = load_data_frame(filename)
 
+    # Encode the Sex and Embarked objects
     X_test["Sex"] = encode_column(X_test, "Sex")
     X_test["Embarked"] = encode_column(X_test, "Embarked")
+
+    # Convert title to useable encoded value
+    X_test = convert_title(X_test)
+
+    # Drop the objects that can't be encoded, convert floats to float32
     X_test = X_test.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
 
-    imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
+    # Create and imputer that fills in NaN's with the mean value
+    imp = Imputer(missing_values="NaN", strategy="mean", axis=0)
     imp = imp.fit(X_test)
-
     X_test_imp = imp.transform(X_test)
 
-    print(len(X_test_imp))
-
+    # Store test predictions as Y
     Y_test = clf.predict(X_test_imp)
 
-    answer = X_test["PassengerId"].append(Y_test)
-    answer.to_csv('titanic_output.csv')
+    # Convert Pandas Series to Numpy Array
+    passenger_id = np.array(X_test["PassengerId"], dtype=pd.Series)
+
+    # Combine Passenger_id with Y_test
+    answer = np.column_stack((passenger_id, Y_test))
+
+    # Save output to csv file
+    np.savetxt("data/titanic_output.csv", answer, fmt="%.0f", delimiter=",", header="PassengerId,Survived")
 
     return
 
@@ -99,6 +121,43 @@ def encode_column(df, label):
     binary_encoding = pd.get_dummies(df[label])
     encoded_vector = binary_encoding.values.argmax(1)
     return encoded_vector
+
+
+def convert_title(df):
+    title_list = ["Mrs", "Mr", "Master", "Miss", "Major", "Rev", "Dr", "Ms", "Mlle", "Col", "Capt",
+                  "Mme", "Countess", "Don", "Jonkheer"]
+
+    df["Title"] = df["Name"].map(lambda x: substrings_in_string(x, title_list))
+
+    df["Title"] = df.apply(replace_titles, axis=1)
+
+    df["Title"] = encode_column(df, "Title")
+
+    return df
+
+
+def substrings_in_string(x, substrings):
+    for substring in substrings:
+        if x.find(substring) != -1:
+            return substring
+
+
+# Replacing all titles with mr, mrs, miss, master
+def replace_titles(df):
+    title = df["Title"]
+    if title in ["Don", "Major", "Capt", "Jonkheer", "Rev", "Col"]:
+        return "Mr"
+    elif title in ["Countess", "Mme"]:
+        return "Mrs"
+    elif title in ["Mlle", "Ms"]:
+        return "Miss"
+    elif title is "Dr":
+        if df["Sex"] is "Male":
+            return "Mr"
+        else:
+            return "Mrs"
+    else:
+        return title
 
 if __name__ == "__main__":
     main()
