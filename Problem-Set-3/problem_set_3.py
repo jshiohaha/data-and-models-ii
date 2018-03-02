@@ -94,9 +94,8 @@ def prepare_titanic(df):
     df["Sex"] = encode_column(df, "Sex")
     df["Embarked"] = encode_column(df, "Embarked")
 
-    # Convert title to useable encoded value
+    # Convert objects to useable encoded value
     df = convert_title(df)
-
     df = convert_deck(df)
 
     # Drop the objects that can't be encoded, convert floats to float32
@@ -136,9 +135,11 @@ def convert_title(df):
 
 
 def convert_deck(df):
-    cabin_list = ["A", "B", "C", "D", "E", "F", "T", "G"]
+    # Fill NaN values with U for unkown
+    df["Cabin"] = df["Cabin"].fillna("U")
+    df["Deck"] = df["Cabin"].astype(str).str[0]
 
-    df["Deck"] = df["Cabin"].map(lambda x: substrings_in_string(x, cabin_list))
+    df["Deck"] = encode_column(df, "Deck")
 
     return df
 
