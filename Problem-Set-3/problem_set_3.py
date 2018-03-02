@@ -101,12 +101,16 @@ def prepare_titanic(df):
     # Drop the objects that can't be encoded, convert floats to float32
     df = df.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
 
-    # Create and imputer that fills in NaN's with the mean value
+    # Create and imputer that fills in NaN's with the median value
     imp = Imputer(missing_values="NaN", strategy="mean", axis=0)
-    imp = imp.fit(df)
-    df_imp = imp.transform(df)
+    imp_fare = imp.fit(df[["Fare"]])
+    df["Fare"] = imp_fare.transform(df[["Fare"]]).ravel()
 
-    return df_imp
+    df = predict_age(df)
+
+    df = df.drop(["Embarked", "PassengerId"], axis=1)
+
+    return df
 
 
 def encode_column(df, label):
@@ -160,6 +164,28 @@ def replace_titles(df):
             return "Mrs"
     else:
         return title
+
+
+def predict_age(df):
+    print("hit predict")
+    with_age = df[df["Age"].notnull()]
+    without_age = df[df["Age"].isnull()]
+
+    with_x, with_y = split_data_frame(with_age, "Age")
+
+    clf = RandomForestClassifier(n_estimators=100)
+    clf.fit(with_x, with_y.astype(int))
+
+    without_x, trash = split_data_frame(without_age, "Age")
+
+    without_y = clf.predict(without_x)
+    print("Finished Predicting Age")
+
+    without_x['Age'] = pd.Series(list(without_y), index=without_x.index)
+
+    result = with_age.append(without_x).sort_index()
+
+    return result
 
 
 if __name__ == "__main__":
