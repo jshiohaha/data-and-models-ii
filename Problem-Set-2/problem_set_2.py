@@ -6,7 +6,6 @@ import math as Math
 import matplotlib.pyplot as plot
 import operator
 
-
 from keras.layers import Dense, Activation
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -21,7 +20,6 @@ from sklearn.metrics import mean_squared_error, confusion_matrix, classification
 
 # LINKS TO HELPFUL INFORMATION ON KNN...
 # https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
-
 
 def main():
     '''
@@ -44,13 +42,18 @@ def main():
     # visualize_data_3d(dataframe, features, plot_flag=plot_flag)
     # find_and_plot_correlation(dataframe)
     df_norm = randomize_and_scale_dataset(dataframe)
+
     # visualize_data_3d(df_norm, features, plot_flag=plot_flag)
-    find_and_plot_correlation(df_norm)
+    # find_and_plot_correlation(df_norm)
     X, Y = create_matrix_and_vector_from_data_frame(df_norm)
 
-    X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
+    X_train, X_test, y_train, y_test = create_train_test_set(X, Y)
+    knn_calculate_accuracy(X_train, y_train, X_test, y_test)
 
-    ann_model(X_train, Y_train, X_test, Y_test)
+    # use_knn(X_train, y_train, X_test, y_test)
+    # ann(X, Y)
+
+    # ann_model(X_train, Y_train, X_test, Y_test)
 
 
 def load_data_frame(filename):
@@ -216,12 +219,11 @@ def create_train_test_set(X, Y, training_set_size=130, testing_set_size=20):
     Y_train_ohe = generate_integer_encoding(Y_train)
     Y_test_ohe = generate_integer_encoding(Y_test)
 
-    return X_train, X_test, Y_train_ohe, Y_test_ohe
+    return X_train, X_test, Y_train, Y_test
 
 
 def generate_integer_encoding(vector):
     binary_encoding = pd.get_dummies(vector)
-    # encoded_vector = binary_encoding.values.argmax(1)
     return binary_encoding
 
 
@@ -270,8 +272,8 @@ def knn_model(xtrain, ytrain, xtest, k):
         (Accuracy is determined by comparing your species predictions to the known species.)
     '''
     prediction = []
-    for idx in range(len(xtest)):
-        neighbors = get_n_neighbors(xtrain, xtest[idx], k)
+    for idx, element in enumerate(xtest):
+        neighbors = get_n_neighbors(xtrain, element, k)
         prediction.append(get_class_from_n_neighbors(neighbors, ytrain))
     return prediction
 
@@ -279,23 +281,35 @@ def knn_model(xtrain, ytrain, xtest, k):
 def knn_calculate_accuracy(xtrain, ytrain, xtest, ytest, k=10):
     print(">> Calculating how size of k from 1 to " + str(k) + " affects accuracy\n")
     accuracy = []
+    error = []
     for i in range(1, k + 1):
+        print(">> Testing knn model when K = {}".format(i))
+
         prediction = knn_model(xtrain, ytrain, xtest, i)
 
         for j, p in enumerate(prediction):
             print("Prediction: " + str(p) + " vs. Actual: " + str(ytest[j]))
 
-        sys.exit()
         print("Confusion matrix with K = {}".format(i))
         print(confusion_matrix(prediction, ytest))
-        accuracy.append(accuracy_score(prediction, ytest))
+        acc_score = accuracy_score(prediction, ytest)
+        accuracy.append(acc_score)
+        error.append(1-acc_score)
+
     print(accuracy)
 
     print(">> Plotting Accuracy vs. K\n")
-    x_arr = np.arange(1, len(accuracy)+1, 1)
+    x_axis = np.arange(1, len(accuracy)+1, 1)
+
+    plot.plot(x_axis, accuracy, color='g')
+    plot.plot(x_axis, error, color='r')
+
     plot.title('Accuracy vs. K')
     plot.xlabel('Size of K')
     plot.ylabel('Accuracy')
+    plot.show()
+
+
     plot.plot(x_arr, accuracy, 'ro')
     plot.axis([0, len(accuracy), 0, 1])
     plot.show()
