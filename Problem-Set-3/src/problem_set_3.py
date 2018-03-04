@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import Imputer
 from sklearn.cluster import KMeans
 
 import generateKClusters
@@ -23,22 +22,26 @@ import generateKClusters
     3.  Do the Kaggle / MNIST digit recognizer challenge (or at least a subset that will run on your computer)
         (http://yann.lecun.com/exdb/mnist/) See the assignment document for the details.
 
-    4.  Use the kmeans() unction. An extra point will be awarded for the team that has the best home grown code performance (time 
-        to solution) relative to kmeans() run on the same computer. Provide a complete narrative of your data science and 
-        machine learning solution process. Provide a study of the optimal number of clusters using the total within-ness 
+    4.  Use the kmeans() unction. An extra point will be awarded for the team that has the best home grown code performance (time
+        to solution) relative to kmeans() run on the same computer. Provide a complete narrative of your data science and
+        machine learning solution process. Provide a study of the optimal number of clusters using the total within-ness
         mean squared error. Show all code and display the clusters using 3-D scatterplots.
 
     5.  Use the mushroom data set from the UCI Machine Learning Repository to predict whether mushrooms are edible or poisonous.
 '''
+
+
 def main():
-    # titanic()
+    titanic()
     # customKMeans()
     # builtInKMeans()
-    naiveBayes()
+    # naiveBayes()
     return
 
 
 ''' ----- BEGIN TITANIC ----- '''
+
+
 def titanic():
     # Get training data
     filename = "../data/titanic_train.csv"
@@ -59,6 +62,9 @@ def titanic():
 
     X_test_imp = prepare_titanic(X_test)
 
+    X_test_imp["Deck_T"] = 0
+    X_test_imp["Title_Royalty"] = 0
+
     # Store test predictions as Y
     Y_test = clf.predict(X_test_imp)
 
@@ -75,6 +81,8 @@ def titanic():
 
 
 ''' ----- TITANIC UTILITY FUNCTIONS ----- '''
+
+
 def split_data_frame(df, label):
     X = df.drop([label], axis=1)
     Y = df[label]
@@ -83,47 +91,109 @@ def split_data_frame(df, label):
 
 def prepare_titanic(df):
     # Encode the Sex and Embarked objects
-    df["Sex"] = encode_column(df, "Sex")
-    df["Embarked"] = encode_column(df, "Embarked")
+    df = dummy_column(df, "Sex")
+    df = dummy_column(df, "Embarked")
+    df = dummy_column(df, "Pclass")
+    df = dummy_column(df, "Title")
+    df["Fare"] = df["Fare"].fillna(df.Fare.mean())
 
     # Convert objects to useable encoded value
     df = convert_title(df)
+
+    _group = df.groupby(["Sex", "Pclass", "Title"])
+    group_median = _group.median()
+
+    df["Age"] = df.apply(lambda x: fill_ages(x, group_median) if np.isnan(x["Age"]) else x["Age"], axis=1)
+
     df = convert_deck(df)
 
+    df = process_family(df)
+
     # Drop the objects that can't be encoded, convert floats to float32
-    df = df.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
+    df = df.drop(["Ticket", "Embarked", "Sex", "Pclass", "Cabin", "PassengerId", "Name", "Deck", "Title", "FamilySize"], axis=1).astype(np.float32)
 
-    # Create and imputer that fills in NaN's with the mean value
-    imp = Imputer(missing_values="NaN", strategy="mean", axis=0)
-    imp = imp.fit(df)
-    df_imp = imp.transform(df)
-
-    return df_imp
+    return df
 
 
-def encode_column(df, label):
-    binary_encoding = pd.get_dummies(df[label])
-    encoded_vector = binary_encoding.values.argmax(1)
-    return encoded_vector
+def dummy_column(df, label):
+    dummies = pd.get_dummies(df[label], prefix=label)
+    df = pd.concat([df, dummies], axis=1)
 
-
-def substrings_in_string(x, substrings):
-    for substring in substrings:
-        if x.find(substring) != -1:
-            return substring
+    return df
 
 
 def convert_title(df):
-    title_list = ["Mrs", "Mr", "Master", "Miss", "Major", "Rev", "Dr", "Ms", "Mlle", "Col", "Capt",
-                  "Mme", "Countess", "Don", "Jonkheer"]
+    df["Title"] = df["Name"].map(lambda x: x.split(",")[1].split(".")[0].strip())
 
-    df["Title"] = df["Name"].map(lambda x: substrings_in_string(x, title_list))
+    title_list = {
+        "Mrs": "Mrs",
+        "Mr": "Mr",
+        "Master": "Master",
+        "Miss": "Miss",
+        "Major": "Officer",
+        "Rev": "Officer",
+        "Dr": "Officer",
+        "Ms": "Mrs",
+        "Mlle": "Miss",
+        "Col": "Officer",
+        "Capt": "Officer",
+        "Mme": "Mrs",
+        "Countess": "Royalty",
+        "Don": "Royalty",
+        "Jonkheer": "Royalty"
+    }
 
-    df["Title"] = df.apply(replace_titles, axis=1)
-
-    df["Title"] = encode_column(df, "Title")
+    df["Title"] = df["Title"].map(title_list)
 
     return df
+
+
+def fill_ages(row, grouped_median):
+    if row['Sex'] == 'female' and row['Pclass'] == 1:
+        if row['Title'] == 'Miss':
+            return grouped_median.loc['female', 1, 'Miss']['Age']
+        elif row['Title'] == 'Mrs':
+            return grouped_median.loc['female', 1, 'Mrs']['Age']
+        elif row['Title'] == 'Officer':
+            return grouped_median.loc['female', 1, 'Officer']['Age']
+        elif row['Title'] == 'Royalty':
+            return grouped_median.loc['female', 1, 'Royalty']['Age']
+
+    elif row['Sex'] == 'female' and row['Pclass'] == 2:
+        if row['Title'] == 'Miss':
+            return grouped_median.loc['female', 2, 'Miss']['Age']
+        elif row['Title'] == 'Mrs':
+            return grouped_median.loc['female', 2, 'Mrs']['Age']
+
+    elif row['Sex'] == 'female' and row['Pclass'] == 3:
+        if row['Title'] == 'Miss':
+            return grouped_median.loc['female', 3, 'Miss']['Age']
+        elif row['Title'] == 'Mrs':
+            return grouped_median.loc['female', 3, 'Mrs']['Age']
+
+    elif row['Sex'] == 'male' and row['Pclass'] == 1:
+        if row['Title'] == 'Master':
+            return grouped_median.loc['male', 1, 'Master']['Age']
+        elif row['Title'] == 'Mr':
+            return grouped_median.loc['male', 1, 'Mr']['Age']
+        elif row['Title'] == 'Officer':
+            return grouped_median.loc['male', 1, 'Officer']['Age']
+        elif row['Title'] == 'Royalty':
+            return grouped_median.loc['male', 1, 'Royalty']['Age']
+
+    elif row['Sex'] == 'male' and row['Pclass'] == 2:
+        if row['Title'] == 'Master':
+            return grouped_median.loc['male', 2, 'Master']['Age']
+        elif row['Title'] == 'Mr':
+            return grouped_median.loc['male', 2, 'Mr']['Age']
+        elif row['Title'] == 'Officer':
+            return grouped_median.loc['male', 2, 'Officer']['Age']
+
+    elif row['Sex'] == 'male' and row['Pclass'] == 3:
+        if row['Title'] == 'Master':
+            return grouped_median.loc['male', 3, 'Master']['Age']
+        elif row['Title'] == 'Mr':
+            return grouped_median.loc['male', 3, 'Mr']['Age']
 
 
 def convert_deck(df):
@@ -131,28 +201,23 @@ def convert_deck(df):
     df["Cabin"] = df["Cabin"].fillna("U")
     df["Deck"] = df["Cabin"].astype(str).str[0]
 
-    df["Deck"] = encode_column(df, "Deck")
+    df = dummy_column(df, "Deck")
 
     return df
 
 
-# Replacing all titles with mr, mrs, miss, master
-def replace_titles(df):
-    title = df["Title"]
-    if title in ["Don", "Major", "Capt", "Jonkheer", "Rev", "Col"]:
-        return "Mr"
-    elif title in ["Countess", "Mme"]:
-        return "Mrs"
-    elif title in ["Mlle", "Ms"]:
-        return "Miss"
-    elif title is "Dr":
-        if df["Sex"] is "Male":
-            return "Mr"
-        else:
-            return "Mrs"
-    else:
-        return title
+def process_family(df):
+    df["FamilySize"] = df["Parch"] + df["SibSp"]
+
+    df["Alone"] = df.FamilySize.map(lambda x: 1 if x == 0 else 0)
+    df["Small"] = df.FamilySize.map(lambda x: 1 if 0 < x < 4 else 0)
+    df["Large"] = df.FamilySize.map(lambda x: 1 if 4 < x else 0)
+
+    return df
+
+
 ''' ----- END TITANIC ----- '''
+
 
 def load_data_frame(filename):
     """1. Import data set"""
@@ -192,6 +257,8 @@ def describe_data_frame(dataframe):
 
 
 ''' ------ BEGIN K-MEANS --------'''
+
+
 def customKMeans():
     filename = '../data/iris.arff'
     generateKClusters.runKMeans(filename)
@@ -206,7 +273,7 @@ def builtInKMeans():
     kmeans = KMeans(n_clusters=3, random_state=0).fit(X)
     end = time.time()
 
-    print("Time: {}".format(end-start))
+    print("Time: {}".format(end - start))
     score = kmeans.score(X)
     print(score)
     print("Cluster centers: {}".format(kmeans.cluster_centers_))
