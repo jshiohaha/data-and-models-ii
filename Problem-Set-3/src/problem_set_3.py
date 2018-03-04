@@ -94,6 +94,7 @@ def prepare_titanic(df):
     df = dummy_column(df, "Sex")
     df = dummy_column(df, "Embarked")
     df = dummy_column(df, "Pclass")
+    df = dummy_column(df, "Title")
     df["Fare"] = df["Fare"].fillna(df.Fare.mean())
 
     # Convert objects to useable encoded value
@@ -121,12 +122,6 @@ def dummy_column(df, label):
     return df
 
 
-def substrings_in_string(x, substrings):
-    for substring in substrings:
-        if x.find(substring) != -1:
-            return substring
-
-
 def convert_title(df):
     df["Title"] = df["Name"].map(lambda x: x.split(",")[1].split(".")[0].strip())
 
@@ -149,29 +144,6 @@ def convert_title(df):
     }
 
     df["Title"] = df["Title"].map(title_list)
-
-    titles_dummies = pd.get_dummies(df["Title"], prefix='Title')
-    df = pd.concat([df, titles_dummies], axis=1)
-
-    return df
-
-
-def convert_deck(df):
-    # Fill NaN values with U for unkown
-    df["Cabin"] = df["Cabin"].fillna("U")
-    df["Deck"] = df["Cabin"].astype(str).str[0]
-
-    df = dummy_column(df, "Deck")
-
-    return df
-
-
-def process_family(df):
-    df["FamilySize"] = df["Parch"] + df["SibSp"]
-
-    df["Alone"] = df.FamilySize.map(lambda x: 1 if x == 0 else 0)
-    df["Small"] = df.FamilySize.map(lambda x: 1 if 0 < x < 4 else 0)
-    df["Large"] = df.FamilySize.map(lambda x: 1 if 4 < x else 0)
 
     return df
 
@@ -222,6 +194,26 @@ def fill_ages(row, grouped_median):
             return grouped_median.loc['male', 3, 'Master']['Age']
         elif row['Title'] == 'Mr':
             return grouped_median.loc['male', 3, 'Mr']['Age']
+
+
+def convert_deck(df):
+    # Fill NaN values with U for unkown
+    df["Cabin"] = df["Cabin"].fillna("U")
+    df["Deck"] = df["Cabin"].astype(str).str[0]
+
+    df = dummy_column(df, "Deck")
+
+    return df
+
+
+def process_family(df):
+    df["FamilySize"] = df["Parch"] + df["SibSp"]
+
+    df["Alone"] = df.FamilySize.map(lambda x: 1 if x == 0 else 0)
+    df["Small"] = df.FamilySize.map(lambda x: 1 if 0 < x < 4 else 0)
+    df["Large"] = df.FamilySize.map(lambda x: 1 if 4 < x else 0)
+
+    return df
 
 
 ''' ----- END TITANIC ----- '''
