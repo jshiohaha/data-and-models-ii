@@ -23,22 +23,26 @@ import generateKClusters
     3.  Do the Kaggle / MNIST digit recognizer challenge (or at least a subset that will run on your computer)
         (http://yann.lecun.com/exdb/mnist/) See the assignment document for the details.
 
-    4.  Use the kmeans() unction. An extra point will be awarded for the team that has the best home grown code performance (time 
-        to solution) relative to kmeans() run on the same computer. Provide a complete narrative of your data science and 
-        machine learning solution process. Provide a study of the optimal number of clusters using the total within-ness 
+    4.  Use the kmeans() unction. An extra point will be awarded for the team that has the best home grown code performance (time
+        to solution) relative to kmeans() run on the same computer. Provide a complete narrative of your data science and
+        machine learning solution process. Provide a study of the optimal number of clusters using the total within-ness
         mean squared error. Show all code and display the clusters using 3-D scatterplots.
 
     5.  Use the mushroom data set from the UCI Machine Learning Repository to predict whether mushrooms are edible or poisonous.
 '''
+
+
 def main():
-    # titanic()
+    titanic()
     # customKMeans()
     # builtInKMeans()
-    naiveBayes()
+    # naiveBayes()
     return
 
 
 ''' ----- BEGIN TITANIC ----- '''
+
+
 def titanic():
     # Get training data
     filename = "../data/titanic_train.csv"
@@ -75,6 +79,8 @@ def titanic():
 
 
 ''' ----- TITANIC UTILITY FUNCTIONS ----- '''
+
+
 def split_data_frame(df, label):
     X = df.drop([label], axis=1)
     Y = df[label]
@@ -93,12 +99,16 @@ def prepare_titanic(df):
     # Drop the objects that can't be encoded, convert floats to float32
     df = df.drop(["Name", "Ticket", "Cabin"], axis=1).astype(np.float32)
 
-    # Create and imputer that fills in NaN's with the mean value
+    # Create and imputer that fills in NaN's with the median value
     imp = Imputer(missing_values="NaN", strategy="mean", axis=0)
-    imp = imp.fit(df)
-    df_imp = imp.transform(df)
+    imp_fare = imp.fit(df[["Fare"]])
+    df["Fare"] = imp_fare.transform(df[["Fare"]]).ravel()
 
-    return df_imp
+    df = predict_age(df)
+
+    df = df.drop(["PassengerId"], axis=1)
+
+    return df
 
 
 def encode_column(df, label):
@@ -152,7 +162,30 @@ def replace_titles(df):
             return "Mrs"
     else:
         return title
+
+
+def predict_age(df):
+    print("hit predict")
+    with_age = df[df["Age"].notnull()]
+    without_age = df[df["Age"].isnull()]
+
+    with_x, with_y = split_data_frame(with_age, "Age")
+
+    clf = RandomForestClassifier(n_estimators=100)
+    clf.fit(with_x, with_y.astype(int))
+
+    without_x, trash = split_data_frame(without_age, "Age")
+
+    without_y = clf.predict(without_x)
+    print("Finished Predicting Age")
+
+    without_x['Age'] = pd.Series(list(without_y), index=without_x.index)
+
+    result = with_age.append(without_x).sort_index()
+
+    return result
 ''' ----- END TITANIC ----- '''
+
 
 def load_data_frame(filename):
     """1. Import data set"""
@@ -192,6 +225,8 @@ def describe_data_frame(dataframe):
 
 
 ''' ------ BEGIN K-MEANS --------'''
+
+
 def customKMeans():
     filename = '../data/iris.arff'
     generateKClusters.runKMeans(filename)
@@ -206,7 +241,7 @@ def builtInKMeans():
     kmeans = KMeans(n_clusters=3, random_state=0).fit(X)
     end = time.time()
 
-    print("Time: {}".format(end-start))
+    print("Time: {}".format(end - start))
     score = kmeans.score(X)
     print(score)
     print("Cluster centers: {}".format(kmeans.cluster_centers_))
