@@ -297,7 +297,7 @@ def naiveBayes():
         - Print the conditional probability tables. Choose one and explain the contents.
         - "Predict" the training labels. Print the confusion matrix and accuracy.
         - Predict the test labels. Print the confusion matrix and accuracy.
-        - Why is this a good data set for Naive Bayes despite mushrooms not being especially interesting ?
+        - Why is this a good data set for Naive Bayes despite mushrooms not being especially interesting?
     '''
     filename = '../data/agaricus-lepiota.data'
     df = load_data_frame(filename)
