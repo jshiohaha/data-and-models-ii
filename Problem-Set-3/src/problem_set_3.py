@@ -8,17 +8,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.cluster import KMeans
 
 import generateKClusters
-
+import entropy
 
 '''
     TODO:
-
-    1.  Write a general function that computes the information entropy for a data set in a parent node and the
-        aggregate information entropy and information gain for any number of partitions (subsets) of that data set in
-        child nodes. The response variable is Bernoulli e.g., play tennis or do not play tennis.
-        Test your function and output results for each partitioning in the example in this video. Note that Prof Patrick
-        Winston is a super famous MIT professor. And yes, you will have to watch the entire lecture.
-        (https://www.youtube.com/watch?v=SXBG3RGr_Rc)
     3.  Do the Kaggle / MNIST digit recognizer challenge (or at least a subset that will run on your computer)
         (http://yann.lecun.com/exdb/mnist/) See the assignment document for the details.
 
@@ -32,11 +25,23 @@ import generateKClusters
 
 
 def main():
-    titanic()
+    # titanic()
+    # customEntropy()
     # customKMeans()
     # builtInKMeans()
     # naiveBayes()
     return
+
+
+''' ----- BEGIN ENTROPY ----- '''
+
+def customEntropy():
+    # Get training data
+    filename = "../data/romanian.csv"
+    romanian = load_data_frame(filename)
+    entropy.runEntropy(romanian)
+
+''' ------ END ENTROPY ------ '''
 
 
 ''' ----- BEGIN TITANIC ----- '''
