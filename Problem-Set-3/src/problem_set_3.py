@@ -14,19 +14,11 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 import generateKClusters
 import kmeans
 
+import entropy
+import randomForest
 
 '''
     TODO:
-
-    1.  Write a general function that computes the information entropy for a data set in a parent node and the
-        aggregate information entropy and information gain for any number of partitions (subsets) of that data set in
-        child nodes. The response variable is Bernoulli e.g., play tennis or do not play tennis.
-        Test your function and output results for each partitioning in the example in this video. Note that Prof Patrick
-        Winston is a super famous MIT professor. And yes, you will have to watch the entire lecture.
-        (https://www.youtube.com/watch?v=SXBG3RGr_Rc)
-    3.  Do the Kaggle / MNIST digit recognizer challenge (or at least a subset that will run on your computer)
-        (http://yann.lecun.com/exdb/mnist/) See the assignment document for the details.
-
     4.  Use the kmeans() unction. An extra point will be awarded for the team that has the best home grown code performance (time
         to solution) relative to kmeans() run on the same computer. Provide a complete narrative of your data science and
         machine learning solution process. Provide a study of the optimal number of clusters using the total within-ness
@@ -38,12 +30,38 @@ import kmeans
 
 def main():
     # titanic()
+<<<<<<< HEAD
+=======
+    # customEntropy()
+>>>>>>> 19c0d83ef01d9a70f60ee1d7025d2e4062b2103e
     # customKMeans()
     # compareCustomAndBuiltIn()
     # builtInKMeans()
+<<<<<<< HEAD
     naiveBayes()
+=======
+    # naiveBayes()
+    # customRandomForest()
+>>>>>>> 19c0d83ef01d9a70f60ee1d7025d2e4062b2103e
     return
 
+
+''' ----- BEGIN ENTROPY ----- '''
+
+def customEntropy():
+    # Get training data
+    filename = "../data/romanian.csv"
+    romanian = load_data_frame(filename)
+    entropy.runEntropy(romanian)
+
+''' ------ END ENTROPY ------ '''
+
+''' ----- BEGIN RANDOM FOREST DIGIT REC ----- '''
+
+def customRandomForest():
+    randomForest.runRandomForest()
+
+''' ------ END RANDOM FOREST DIGIT REC ------ '''
 
 ''' ----- BEGIN TITANIC ----- '''
 
@@ -100,11 +118,11 @@ def prepare_titanic(df):
     df = dummy_column(df, "Sex")
     df = dummy_column(df, "Embarked")
     df = dummy_column(df, "Pclass")
-    df = dummy_column(df, "Title")
     df["Fare"] = df["Fare"].fillna(df.Fare.mean())
 
     # Convert objects to useable encoded value
     df = convert_title(df)
+    df = dummy_column(df, "Title")
 
     _group = df.groupby(["Sex", "Pclass", "Title"])
     group_median = _group.median()
