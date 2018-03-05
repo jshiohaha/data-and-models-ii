@@ -9,12 +9,10 @@ from sklearn.cluster import KMeans
 
 import generateKClusters
 import entropy
+import randomForest
 
 '''
     TODO:
-    3.  Do the Kaggle / MNIST digit recognizer challenge (or at least a subset that will run on your computer)
-        (http://yann.lecun.com/exdb/mnist/) See the assignment document for the details.
-
     4.  Use the kmeans() unction. An extra point will be awarded for the team that has the best home grown code performance (time
         to solution) relative to kmeans() run on the same computer. Provide a complete narrative of your data science and
         machine learning solution process. Provide a study of the optimal number of clusters using the total within-ness
@@ -26,10 +24,11 @@ import entropy
 
 def main():
     # titanic()
-    # customEntropy()
+    customEntropy()
     # customKMeans()
     # builtInKMeans()
     # naiveBayes()
+    # customRandomForest()
     return
 
 
@@ -43,6 +42,12 @@ def customEntropy():
 
 ''' ------ END ENTROPY ------ '''
 
+''' ----- BEGIN RANDOM FOREST DIGIT REC ----- '''
+
+def customRandomForest():
+    randomForest.runRandomForest()
+
+''' ------ END RANDOM FOREST DIGIT REC ------ '''
 
 ''' ----- BEGIN TITANIC ----- '''
 
