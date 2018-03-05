@@ -1,13 +1,18 @@
 import sys
 import time
+import pprint
 
 import numpy as np
 import pandas as pd
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.cluster import KMeans
+from sklearn.naive_bayes import GaussianNB,BernoulliNB
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, accuracy_score
 
 import generateKClusters
+import kmeans
 
 
 '''
@@ -32,10 +37,11 @@ import generateKClusters
 
 
 def main():
-    titanic()
+    # titanic()
     # customKMeans()
+    # compareCustomAndBuiltIn()
     # builtInKMeans()
-    # naiveBayes()
+    naiveBayes()
     return
 
 
@@ -260,6 +266,7 @@ def describe_data_frame(dataframe):
 
 
 def customKMeans():
+    print("hello")
     filename = '../data/iris.arff'
     generateKClusters.runKMeans(filename)
 
@@ -274,30 +281,114 @@ def builtInKMeans():
     end = time.time()
 
     print("Time: {}".format(end - start))
-    score = kmeans.score(X)
-    print(score)
-    print("Cluster centers: {}".format(kmeans.cluster_centers_))
+
+
+def compareCustomAndBuiltIn(iterations=10):
+    k = 3
+    epsilon = 0.01
+    max_iterations = 10
+    seed = 10
+    normalize = True
+    filename = '../data/iris.arff'
+
+    dataframe, classes, original_dataframe = generateKClusters.parse_arff_file(filename, normalize)
+
+    X = dataframe.values
+    total_custom_runtime = 0
+    total_built_in_runtime = 0
+    for i in range(iterations):
+        clusters, original_centroids, final_centroids, num_iterations, runtime, error = kmeans.k_means_clustering(dataframe, k, max_iterations, epsilon, seed)
+        total_custom_runtime += runtime
+
+        start = time.time()
+        KMeans(n_clusters=3, random_state=0).fit(X)
+        end = time.time()
+        total_built_in_runtime += (end-start)
+
+    total_custom_runtime /= iterations
+    total_built_in_runtime /= iterations
+    print("Custom average runtime for 10 iterations: {} seconds versus Built-in average runtime for 10 iterations: {} seconds".format(round(total_custom_runtime,3), round(total_built_in_runtime,3)))
 ''' --------- END K-MEANS ---------- '''
 
 
 def naiveBayes():
     '''
-        - What are the dimensions of the data set?
-        - What are the response and explanatory variables ? What type are they?
-        - How many mushrooms in the data set are edible and poisious ?
-        - Should the explanatory variables be scaled ?
-        - Split the data set into training and test sets with 75% of data in the training set.
-        - Print the dimensions of each set.
-        - Develop a model using naiveBayes()
         - Print the conditional probability tables. Choose one and explain the contents.
-        - "Predict" the training labels. Print the confusion matrix and accuracy.
-        - Predict the test labels. Print the confusion matrix and accuracy.
-        - Why is this a good data set for Naive Bayes despite mushrooms not being especially interesting?
     '''
-    filename = '../data/agaricus-lepiota.data'
+    filename = '../data/mushroom/agaricus-lepiota.data'
+    print_comparison = False
+
+    print("""No, the data set does not need to be scaled. Naive Bayes sets the priors
+             based on the data you give it, so it will scale those priors to match your
+             data.""")
+
+    print("""There are 22 explanatory variables and are all chars representing an element
+             of a class:
+
+             cap-shape,cap-surface,cap-color,bruises?,odor,gill-attachment,gill-spacing,
+             gill-size,gill-color,stalk-shape,stalk-root,stalk-surface-above-ring,
+             stalk-surface-below-ring,stalk-color-above-ring,stalk-color-below-ring,
+             veil-type,veil-color,ring-number,ring-type,spore-print-color,population,habitat
+
+             The response variable is the class saying whether or not the mushroom is edible
+             or poisonous.
+          """)
+
     df = load_data_frame(filename)
+    rows, columns = df.shape
+    print("There are {} rows and {} columns".format(rows, columns))
+
     describe_data_frame(df)
-    print("todo")
+    print("There are {} ({}%) edible mushrooms and {} ({}%) poisonous mushrooms.\n".format(4208, 51.8, 3916, 48.2))
+
+
+    df.loc[df['class'] == 'e'] = 0
+    df.loc[df['class'] == 'p'] = 1
+
+
+    Y = df['class']
+    del df['class']
+    X = df
+
+    # Split the data set into training and test sets with 75% of data in the training set
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.25, random_state=10)
+
+    print('Length of X training set: ' + str(len(X_train)))
+    print('Length of Y training set: ' + str(len(Y_train)))
+
+    print('Length of X testing set: ' + str(len(X_test)))
+    print('Length of Y testing set: ' + str(len(Y_test)) + '\n')
+
+    print("Predicting the training labels...")
+    fitted_model = BernoulliNB().fit(X_train, Y_train)
+    predictions = fitted_model.predict(X_train)
+    print("Confusion Matrix: \n{}".format(confusion_matrix(Y_train, predictions)))
+    print("\nAccuracy Score: {}".format(accuracy_score(Y_train, predictions)))
+
+    if print_comparison:
+        Y_test = np.array(Y_test)
+        for idx in range(len(predictions)):
+            matched = 'yes' if predictions[idx] == Y_test[idx] else 'no'
+            print("Predicted: {} vs. Actual: {}... Match? {}".format(predictions[idx], Y_test[idx], matched))
+
+    print("\nPredicting the testing labels...")
+    fitted_model = BernoulliNB().fit(X_train, Y_train)
+    predictions = fitted_model.predict(X_test)
+    print("Confusion Matrix: \n{}".format(confusion_matrix(Y_test, predictions)))
+    print("\nAccuracy Score: {}".format(accuracy_score(Y_test, predictions)))
+
+    if print_comparison:
+        Y_test = np.array(Y_test)
+        for idx in range(len(predictions)):
+            matched = 'yes' if predictions[idx] == Y_test[idx] else 'no'
+            print("Predicted: {} vs. Actual: {}... Match? {}".format(predictions[idx], Y_test[idx], matched))
+
+
+    print("""\nNaive Bayes is of course usefule when we can assume that the features are
+             conditionally independent. However, this assumption is hardly true. But,
+             this data set is a good data set for Naive Bayes because the features are
+             all nominal and discrete.""")
+
 
 if __name__ == "__main__":
     main()

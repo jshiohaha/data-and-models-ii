@@ -28,7 +28,7 @@ def runKMeans(filename):
     clusters, original_centroids, final_centroids, num_iterations, runtime, error = kmeans.k_means_clustering(dataframe, k, max_iterations, epsilon, seed)
 
     print_k_means_data(original_dataframe, clusters, original_centroids, final_centroids, num_iterations, runtime, error, classes)
-    plot_results(clusters)
+    # plot_results(clusters)
 
 
 def print_k_means_data(original_dataframe, clusters, original_centroids, final_centroids, num_iterations, runtime, error, classes):
