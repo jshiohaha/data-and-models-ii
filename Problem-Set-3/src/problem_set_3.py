@@ -24,7 +24,7 @@ import randomForest
 
 def main():
     # titanic()
-    customEntropy()
+    # customEntropy()
     # customKMeans()
     # builtInKMeans()
     # naiveBayes()
@@ -104,11 +104,11 @@ def prepare_titanic(df):
     df = dummy_column(df, "Sex")
     df = dummy_column(df, "Embarked")
     df = dummy_column(df, "Pclass")
-    df = dummy_column(df, "Title")
     df["Fare"] = df["Fare"].fillna(df.Fare.mean())
 
     # Convert objects to useable encoded value
     df = convert_title(df)
+    df = dummy_column(df, "Title")
 
     _group = df.groupby(["Sex", "Pclass", "Title"])
     group_median = _group.median()
