@@ -57,7 +57,7 @@ def main():
     X, Y = create_matrix_and_vector_from_data_frame(scaled_df)
     X_train, X_test, Y_train, Y_test = create_train_test_set(X,Y)
     create_linear_model(X_train, X_test, Y_train, Y_test)
-    create_lm_object(X, Y)
+
 
 def load_data_frame(filename):
     '''
@@ -356,16 +356,18 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     baseline_score = fitModel.score(X_test, Y_test)
     print("Baseline Score (R^2): {}".format(baseline_score))
 
+    reg = OLS(Y_train, add_constant(X_train)).fit()
+    print(reg.summary())
 
-def create_lm_object(X, Y):
-    regr = linear_model.LinearRegression()
-    regr.fit(X, Y)
+    Y_pred = reg.predict(add_constant(X_test))
+    print(Y_pred)
+    print(Y_test)
 
-    print(regr.coef_)
-
-    reg = OLS(Y, add_constant(X)).fit()
-    print(reg.aic)
+    # IDK how we want to plot this, right now it's prediciton vs real.
+    plt.plot(Y_pred, Y_test, 'bo')
+    plt.show()
     return
+
 
 '''
     TODO'S...
