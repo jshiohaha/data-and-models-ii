@@ -8,17 +8,13 @@ import operator
 
 import pprint
 
-from keras.layers import Dense, Activation
-from keras.models import Sequential
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.utils import np_utils
-from keras.utils.vis_utils import plot_model
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn.preprocessing import QuantileTransformer, Normalizer, LabelEncoder
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
+from sklearn.dummy import DummyRegressor
 
 # dataframe variables...
 # Input variables (based on physicochemical tests):
@@ -52,10 +48,12 @@ def main():
 
     filename = 'Data/winequality-white.csv'
     df = load_data_frame(filename)
-    # describe_data_frame(df)
-    # plot_feature_histograms(df)
-    generate_correlation_pairs(df)
 
+    # plot_feature_histograms(df)
+    scaled_df = scale_dataset(df)
+    X, Y = create_matrix_and_vector_from_data_frame(scaled_df)
+    X_train, X_test, Y_train, Y_test = create_train_test_set(X,Y)
+    create_linear_model(X_train, X_test, Y_train, Y_test)
 
 def load_data_frame(filename):
     '''
@@ -69,14 +67,6 @@ def load_data_frame(filename):
         sys.exit()
     return dataframe
 
-
-# Question 2
-# - Describe the structure and range of the data (suggest str() and summary() )
-# - Plot histograms of each feature and response (suggest specifing the number of rows and columns for
-#   this plot)
-# - Comment on the correlation of the features (suggest corrplot() and pairs())
-# - Scale the explanatory variables (suggest looking at the histograms to choose between normal and
-#   uniform scaling)
 
 def describe_data_frame(dataframe):
     '''
@@ -107,9 +97,9 @@ def describe_data_frame(dataframe):
 
 
 def plot_feature_histograms(dataframe):
-    features = ["fixed acidity","volatile acidity","citric acid","residual sugar","chlorides",
-                "free sulfur dioxide","total sulfur dioxide","density","pH","sulphates","alcohol",
-                "quality"]
+    # features = ["fixed acidity","volatile acidity","citric acid","residual sugar","chlorides",
+    #             "free sulfur dioxide","total sulfur dioxide","density","pH","sulphates","alcohol",
+    #             "quality"]
 
     # TODO: might need to change this because of all the explanatory variables... it would
     # be simpler to break it out
@@ -136,6 +126,7 @@ def generate_correlation_pairs(dataframe):
             print(line1)
             print(line2)
             print("\n")
+
 
 def find_correlation(dataframe):
     '''
@@ -310,26 +301,24 @@ def find_correlation(dataframe):
     print('>> -- Correlation between sulphates and alcohol: ' + str(sulphatesalcohol))
 
 
-def randomize_and_scale_dataset(dataframe):
-    print(">> Normalizing the data set between 0 and 1\n")
-    # looking at the histograms to choose between normal and uniform scaling
+def scale_dataset(dataframe):
+    print(">> Normalizing the data set\n")
     # http://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html
+    # looking at the histograms to choose between normal and uniform scaling
 
     # normal scaling
     scaled_data_array = Normalizer().fit_transform(dataframe)
     df_norm = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
 
-    describe_data_frame(df_norm)
+    # describe_data_frame(df_norm)
+    # plot_feature_histograms(df_norm)
 
     # uniform scaling
-    scaled_data_array = QuantileTransformer(output_distribution='uniform').fit_transform(dataframe)
-    df_uni = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
+    # scaled_data_array = QuantileTransformer(output_distribution='uniform').fit_transform(dataframe)
+    # df_uni = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
 
-    describe_data_frame(df_uni)
-
-    # print(">> Randomizing observations for subsequent use\n")
-    # df_norm = df_norm.sample(frac=1)
-    # df_norm['Species'] = dataframe['Species']
+    # describe_data_frame(df_uni)
+    # plot_feature_histograms(df_uni)
 
     return df_norm
 
@@ -352,18 +341,22 @@ def create_train_test_set(X, Y):
     print(">> Creating testing and training datasets\n")
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.25, random_state=42)
 
-    print('Length of X training set: ' + str(len(X_train)))
-    print('Length of Y training set: ' + str(len(Y_train)))
-
-    print('Length of X testing set: ' + str(len(X_test)))
-    print('Length of Y testing set: ' + str(len(Y_test)) + '\n')
+    print('Length of X (and Y) training set: ' + str(len(X_train)))
+    print('Length of X (and Y) testing set: ' + str(len(X_test)))
 
     return X_train, X_test, Y_train, Y_test
+
+
+def create_linear_model(X_train, X_test, Y_train, Y_test):
+    fitModel = DummyRegressor().fit(X_train, Y_train)
+    baseline_score = fitModel.score(X_test, Y_test)
+    print("Baseline Score (R^2): {}".format(baseline_score))
 
 '''
     TODO'S...
 
     Question 3
+        ... started to be addressed in the function above, create_linear_model(...)
         - What is the baseline wine quality prediction accuracy on the training set?
         - Develop an lm() object using all of the explanatory variables
         - Print the model information using summary()
