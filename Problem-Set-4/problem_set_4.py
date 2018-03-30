@@ -10,6 +10,7 @@ import pprint
 
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn import linear_model
 from sklearn.preprocessing import QuantileTransformer, Normalizer, LabelEncoder
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
@@ -54,6 +55,7 @@ def main():
     X, Y = create_matrix_and_vector_from_data_frame(scaled_df)
     X_train, X_test, Y_train, Y_test = create_train_test_set(X,Y)
     create_linear_model(X_train, X_test, Y_train, Y_test)
+    create_lm_object(X, Y)
 
 def load_data_frame(filename):
     '''
@@ -348,16 +350,22 @@ def create_train_test_set(X, Y):
 
 
 def create_linear_model(X_train, X_test, Y_train, Y_test):
-    fitModel = DummyRegressor().fit(X_train, Y_train)
+    fitModel = DummyRegressor(strategy='mean').fit(X_train, Y_train)
     baseline_score = fitModel.score(X_test, Y_test)
     print("Baseline Score (R^2): {}".format(baseline_score))
+
+
+def create_lm_object(X, Y):
+    regr = linear_model.LinearRegression()
+    regr.fit(X, Y)
+
+    print(regr.coef_)
+    return
 
 '''
     TODO'S...
 
-    Question 3
-        ... started to be addressed in the function above, create_linear_model(...)
-        - What is the baseline wine quality prediction accuracy on the training set?
+    Question 3\
         - Develop an lm() object using all of the explanatory variables
         - Print the model information using summary()
         - Print the model information criterion using AIC(), extractAIC(), and logLik()
