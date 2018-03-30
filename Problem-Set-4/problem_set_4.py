@@ -16,6 +16,8 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
 from sklearn.dummy import DummyRegressor
+from statsmodels.regression.linear_model import OLS
+from statsmodels.tools import add_constant
 
 # dataframe variables...
 # Input variables (based on physicochemical tests):
@@ -360,6 +362,9 @@ def create_lm_object(X, Y):
     regr.fit(X, Y)
 
     print(regr.coef_)
+
+    reg = OLS(Y, add_constant(X)).fit()
+    print(reg.aic)
     return
 
 '''
