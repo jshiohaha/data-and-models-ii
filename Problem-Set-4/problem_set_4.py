@@ -15,7 +15,7 @@ from sklearn.preprocessing import QuantileTransformer, Normalizer, LabelEncoder
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
-from sklearn.dummy import DummyRegressor
+from sklearn.dummy import DummyClassifier
 from statsmodels.regression.linear_model import OLS
 from statsmodels.tools import add_constant
 
@@ -54,7 +54,7 @@ def main():
 
     # plot_feature_histograms(df)
     scaled_df = scale_dataset(df)
-    X, Y = create_matrix_and_vector_from_data_frame(scaled_df)
+    X, Y = create_matrix_and_vector_from_data_frame(df)
     X_train, X_test, Y_train, Y_test = create_train_test_set(X,Y)
     create_linear_model(X_train, X_test, Y_train, Y_test)
 
@@ -352,7 +352,7 @@ def create_train_test_set(X, Y):
 
 
 def create_linear_model(X_train, X_test, Y_train, Y_test):
-    fitModel = DummyRegressor(strategy='mean').fit(X_train, Y_train)
+    fitModel = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
     baseline_score = fitModel.score(X_test, Y_test)
     print("Baseline Score (R^2): {}".format(baseline_score))
 
@@ -360,25 +360,15 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     print(reg.summary())
 
     Y_pred = reg.predict(add_constant(X_test))
-    print(Y_pred)
-    print(Y_test)
 
     # IDK how we want to plot this, right now it's prediciton vs real.
     plt.plot(Y_pred, Y_test, 'bo')
-    plt.show()
+    # plt.show()
     return
 
 
 '''
     TODO'S...
-
-    Question 3\
-        - Develop an lm() object using all of the explanatory variables
-        - Print the model information using summary()
-        - Print the model information criterion using AIC(), extractAIC(), and logLik()
-        - Predict the wine quality using the test set and compare the accuracy to the actual quality. Comment.
-        - Print the parameter estimates and their 95% confidence intervals in a single table. (Suggest using
-          confint()), and cbind()
 
     Question 4
         - Roll your own code to compute model parameters, as well as the model information from the library solver
