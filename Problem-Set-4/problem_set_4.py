@@ -53,10 +53,15 @@ def main():
     df = load_data_frame(filename)
 
     # plot_feature_histograms(df)
+    X, Y = create_matrix_and_vector_from_data_frame(df)
+    X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
+    find_baseline(X_train, X_test, Y_train, Y_test)
+
     scaled_df = scale_dataset(df)
     X, Y = create_matrix_and_vector_from_data_frame(df)
-    X_train, X_test, Y_train, Y_test = create_train_test_set(X,Y)
+    X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
     create_linear_model(X_train, X_test, Y_train, Y_test)
+    compute_model_parameters(X_train, X_test, Y_train, Y_test)
 
 
 def load_data_frame(filename):
@@ -351,11 +356,14 @@ def create_train_test_set(X, Y):
     return X_train, X_test, Y_train, Y_test
 
 
-def create_linear_model(X_train, X_test, Y_train, Y_test):
+def find_baseline(X_train, X_test, Y_train, Y_test):    
     fitModel = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
     baseline_score = fitModel.score(X_test, Y_test)
     print("Baseline Score (R^2): {}".format(baseline_score))
+    return
 
+
+def create_linear_model(X_train, X_test, Y_train, Y_test):
     reg = OLS(Y_train, add_constant(X_train)).fit()
     print(reg.summary())
 
@@ -364,6 +372,13 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     # IDK how we want to plot this, right now it's prediciton vs real.
     plt.plot(Y_pred, Y_test, 'bo')
     # plt.show()
+    return
+
+
+def compute_model_parameters(X_train, X_test, Y_train, Y_test):
+    X_train = add_constant(X_train)
+    X_test = add_constant(X_test)
+
     return
 
 
