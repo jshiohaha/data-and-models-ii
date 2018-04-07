@@ -5,10 +5,16 @@ import pandas as pd
 import math as Math
 import matplotlib.pyplot as plt
 import operator
+import pydot
 
 import pprint
 
 from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import plot_model, to_categorical
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn import linear_model
 from sklearn.preprocessing import QuantileTransformer, Normalizer, LabelEncoder
@@ -16,8 +22,8 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report, accuracy_score
 from sklearn.dummy import DummyClassifier
-from statsmodels.regression.linear_model import OLS
-from statsmodels.tools import add_constant
+# from statsmodels.regression.linear_model import OLS
+# from statsmodels.tools import add_constant
 
 # dataframe variables...
 # Input variables (based on physicochemical tests):
@@ -33,7 +39,7 @@ from statsmodels.tools import add_constant
 #   10 - sulphates
 #   11 - alcohol
 #
-#   Output variable (based on sensory data): 
+#   Output variable (based on sensory data):
 #   12 - quality (score between 0 and 10)
 
 def main():
@@ -57,12 +63,10 @@ def main():
     X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
     find_baseline(X_train, X_test, Y_train, Y_test)
 
-    scaled_df = scale_dataset(df)
-    X, Y = create_matrix_and_vector_from_data_frame(scaled_df)
-    X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
-    create_linear_model(X_train, X_test, Y_train, Y_test)
-    compute_model_parameters(X, Y)
-    gradient_descent_solver(X, Y)
+    #create_linear_model(X_train, X_test, Y_train, Y_test)
+    #compute_model_parameters(X, Y)
+    #gradient_descent_solver(X, Y)
+    nueral_net_solver(X, Y)
 
 
 def load_data_frame(filename):
@@ -83,7 +87,7 @@ def describe_data_frame(dataframe):
         2. Display the data frame dimensions, the structure, summary, the first 5
            and last 5 observations. Which are the explanatory and response variables?
            Comment on the data.
-    
+
         TODO: Missing data?
     '''
     print(">> Data Frame Description\n")
@@ -357,7 +361,7 @@ def create_train_test_set(X, Y):
     return X_train, X_test, Y_train, Y_test
 
 
-def find_baseline(X_train, X_test, Y_train, Y_test):    
+def find_baseline(X_train, X_test, Y_train, Y_test):
     fitModel = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
     baseline_score = fitModel.score(X_test, Y_test)
     print("Baseline Score (R^2): {}".format(baseline_score))
@@ -406,6 +410,40 @@ def gradient_descent_solver(X, Y):
     print("Cost: {}".format(c))
     print("Betas: {}".format(B))
 
+def baseline_model(X):
+    rows, columns = X.shape
+    model = Sequential()
+    model.add(Dense(11, input_shape=(rows, columns), activation = 'relu'))
+    model.add(Dense(10, activation='softmax'))
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    #model.fit(X, Y, epochs=200, batch_size=5, verbose=0)
+    return model
+
+def nueral_net_solver(X, Y):
+    print(">> Training a Keras Sequential model\n")\
+
+    seed = 7
+    np.random.seed(seed)
+    rows, columns = X.shape
+
+    #X = np.reshape(X, (1, rows, columns))
+    #Y = np.reshape(Y, (1, rows, 1))
+
+    Y = to_categorical(Y)
+
+    estimator = KerasClassifier(build_fn=baseline_model(X), epochs = 200, batch_size = 5, verbose = 0)
+    kfold = KFold(n_splits=10,shuffle=True, random_state=None)
+    results = cross_val_score(estimator, X, Y, cv=kfold)
+    print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+    #y1 = model.predict_classes(X)
+
+    #for i in range(500):
+    #    print("Actual: {}, Predicted: {}".format(np.argmax(Y[0,i]),y1[0,i]))
+
+    #score = model.evaluate(X, Y, batch_size=45)
+
+    #print(model.metrics_names)
+    #print("Score: {}".format(score))
 
 '''
     TODO'S...
@@ -442,11 +480,11 @@ def gradient_descent_solver(X, Y):
               what might be the problem?
             - Most residual errors are less than |1|, what does that mean ?
             - Compute the residual standard error and the degrees freedom for the residual error
-    
+
     Question 8
         - Create and print a table similar to that in lm() output for your theta values for estimates, , compute
           standard error, T values, and P values.
-    
+
     Question 9
         - Compute R^2
         - Compute R^2_{ADJ}
