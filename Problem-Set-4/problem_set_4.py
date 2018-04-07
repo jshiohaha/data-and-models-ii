@@ -58,10 +58,11 @@ def main():
     find_baseline(X_train, X_test, Y_train, Y_test)
 
     scaled_df = scale_dataset(df)
-    X, Y = create_matrix_and_vector_from_data_frame(df)
+    X, Y = create_matrix_and_vector_from_data_frame(scaled_df)
     X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
     create_linear_model(X_train, X_test, Y_train, Y_test)
-    compute_model_parameters(X_train, X_test, Y_train, Y_test)
+    compute_model_parameters(X, Y)
+    gradient_descent_solver(X, Y)
 
 
 def load_data_frame(filename):
@@ -364,6 +365,8 @@ def find_baseline(X_train, X_test, Y_train, Y_test):
 
 
 def create_linear_model(X_train, X_test, Y_train, Y_test):
+    X_train = add_constant(X_train)
+    X_test = add_constant(X_test)
     reg = OLS(Y_train, add_constant(X_train)).fit()
     print(reg.summary())
 
@@ -375,11 +378,33 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     return
 
 
-def compute_model_parameters(X_train, X_test, Y_train, Y_test):
-    X_train = add_constant(X_train)
-    X_test = add_constant(X_test)
-
+def compute_model_parameters(X, Y):
+    X = add_constant(X)
     return
+
+
+def gradient_descent_solver(X, Y):
+    def cost(B):
+        e = np.sum((X.dot(B) - Y[0]) ** 2)
+        return e
+
+    n = 12
+    X = add_constant(X)
+    B = np.ones(n).reshape(n, 1)
+    Y = Y.reshape(4898, 1)
+    print(Y)
+    learning_rate = 0.00001
+    convergence = 10
+    c = cost(B)
+
+    while c > convergence:
+        dldw = -2 * X.T.dot(np.subtract(Y[0], X.dot(B)))
+        B = B - dldw * learning_rate
+        c = cost(B)
+        print(c)
+
+    print("Cost: {}".format(c))
+    print("Betas: {}".format(B))
 
 
 '''
