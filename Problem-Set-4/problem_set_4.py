@@ -5,6 +5,7 @@ import pandas as pd
 import math as  math
 import matplotlib.pyplot as plt
 import operator
+import itertools
 
 import pprint
 
@@ -69,13 +70,14 @@ def main():
     scaled_df = scale_dataset(df)
     scaled_X, scaled_Y = create_matrix_and_vector_from_data_frame(scaled_df)
     scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test = create_train_test_set(scaled_X, scaled_Y)
-    find_baseline(X_train, X_test, Y_train, Y_test)
+    # find_baseline(X_train, X_test, Y_train, Y_test)
 
     # coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
     # gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
     # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
     # compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
+    find_best_model(X, Y)
 
 
 def load_data_frame(filename):
@@ -486,11 +488,10 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
         dldw = -2 * X_train.T.dot(np.subtract(Y_train[0], X_train.dot(B)))
         B = B - dldw * learning_rate
         c = cost(X_train, Y_train, B)
-        print(c)
 
     print("Gradient Descent Final Cost: {}".format(c))
     print("Gradient Descent Parameters: {}".format(B))
-    print("Libraray linear model coefficients: {}".format(coefficients))
+    print("Library linear model coefficients: {}".format(coefficients))
 
     # Predict the wine quality based on the GD parameters
     predictions = add_constant(X_test).dot(B)
@@ -502,6 +503,24 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
 
     for i in range(len(predictions)):
         print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
+
+
+def find_best_model(X, Y):
+    x_rows, x_columns = X.shape
+    aic = {}
+    for k in range(1, x_columns):
+        for v in itertools.combinations(range(0, x_columns), k):
+            # print(v)
+            # print(list(v))
+            p = X[:, list(v)]
+            # print("P: {}".format(p))
+            # print("X Shape: {}".format(p.shape))
+            # print("Y Shape: {}".format(Y.shape))
+            regr = OLS(Y, add_constant(p)).fit()
+            aic[v] = regr.aic
+            print("V: {} \n AIC: {} \n \n".format(v, aic[v]))
+    print(pd.Series(aic).idxmin())
+    return
 
 
 def create_summary_table(X, nobs, p, betas, actual, predictions):
