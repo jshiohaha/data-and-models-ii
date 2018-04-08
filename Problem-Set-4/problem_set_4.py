@@ -65,18 +65,17 @@ def main():
     # plot_feature_histograms(df)
     X, Y = create_matrix_and_vector_from_data_frame(df)
     X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
-    find_baseline(X_train, X_test, Y_train, Y_test)
 
     scaled_df = scale_dataset(df)
     scaled_X, scaled_Y = create_matrix_and_vector_from_data_frame(scaled_df)
     scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test = create_train_test_set(scaled_X, scaled_Y)
     find_baseline(X_train, X_test, Y_train, Y_test)
 
-    coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
+    # coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
     # gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
-    actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
-    compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
+    # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
+    # compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
 
 
 def load_data_frame(filename):
@@ -372,16 +371,9 @@ def create_train_test_set(X, Y):
 
 
 def find_baseline(X_train, X_test, Y_train, Y_test):
-    ''' TODO '''
-    # def loss_func(Y_test, X_test):
-    #     diff = np.abs(ground_truth - predictions).max()
-    #     return np.log(1 + diff)
-
-    reg = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
-    # score = make_scorer(loss_func, greater_is_better=True)
-    
-    # baseline_score = reg.score(X_test, Y_test)
-    # print("Baseline Score (R^2): {}".format(baseline_score))
+    fitModel = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
+    baseline_score = fitModel.score(X_test, Y_test)
+    print("Baseline Score (R^2): {}".format(baseline_score))
 
 
 def create_linear_model(X_train, X_test, Y_train, Y_test):
