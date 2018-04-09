@@ -37,15 +37,6 @@ from statsmodels.tools import add_constant
 #   Output variable (based on sensory data): 
 #   12 - quality (score between 0 and 10)
 
-'''
-    [TODO] Question 10
-        - Reduce the number of explanatory variables in your lm() model one by one to find the best model using
-          the AIC criterion (tradeoff between maximum likelihood and number of parameters). (suggest using
-          step(lm(),…))
-        - Increase the number explanatory variables from the intercept alone in your lm() model one by one to
-          find the best model using the AIC criterion
-        - Note that step(lm()) uses extractAIC() not AIC()
-'''
 
 def main():
     '''
@@ -61,6 +52,12 @@ def main():
 
     filename = 'Data/winequality-white.csv'
     df = load_data_frame(filename)
+    # plot_feature_histograms(df, title="Unscaled Data Set")
+
+    # for i in range(12):
+    #     plot_feature_histograms(df.iloc[:,i], title="Feature {}".format(i+1))
+
+    # describe_data_frame(df)
 
     # plot_feature_histograms(df)
     X, Y = create_matrix_and_vector_from_data_frame(df)
@@ -70,13 +67,14 @@ def main():
     scaled_df = scale_dataset(df)
     scaled_X, scaled_Y = create_matrix_and_vector_from_data_frame(scaled_df)
     scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test = create_train_test_set(scaled_X, scaled_Y)
-    find_baseline(X_train, X_test, Y_train, Y_test)
+    # find_baseline(X_train, X_test, Y_train, Y_test)
 
     coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
-    # gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
-    actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
-    compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
+    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
+    # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
+    # sys.exit()
+    # compute_custom_model_statistics(X_train, X_test, nobs, p, betas, actual, predictions)
 
 
 def load_data_frame(filename):
@@ -120,209 +118,20 @@ def describe_data_frame(dataframe):
     return dataframe
 
 
-def plot_feature_histograms(dataframe):
+def plot_feature_histograms(dataframe, title=None):
     # features = ["fixed acidity","volatile acidity","citric acid","residual sugar","chlorides",
     #             "free sulfur dioxide","total sulfur dioxide","density","pH","sulphates","alcohol",
     #             "quality"]
 
     # TODO: might need to change this because of all the explanatory variables... it would
     # be simpler to break it out
-    plt.figure()
+    fig = plt.figure()
+
+    if title is not None:
+        fig.suptitle(title)
+
     dataframe.plot.hist(stacked=True)
     plt.show()
-
-
-def generate_correlation_pairs(dataframe):
-    features = ["fixed acidity","volatile acidity","citric acid","residual sugar","chlorides",
-                "free sulfur dioxide","total sulfur dioxide","density","pH","sulphates","alcohol"]
-
-    total = list()
-    for i in range(len(features)):
-        for j in range(i, len(features)):
-            if i == j:
-                continue
-
-            pair = (features[i], features[j])
-
-            pair_combo = str(pair[0]+pair[1]).replace(' ', '')
-            line1 = "{} = np.correlate(dataframe['{}'], dataframe['{}'])".format(pair_combo,pair[0],pair[1])
-            line2 = "print('>> -- Correlation between {} and {}: ' + str({}))".format(pair[0],pair[1],pair_combo)
-            print(line1)
-            print(line2)
-            print("\n")
-
-
-def find_correlation(dataframe):
-    '''
-        Find the correlation among the explanatory variables
-    '''
-    # write a script that that will take these and generate code for correlation...
-    # sepalLW = np.correlate(dataframe['Sepal.Length'], dataframe['Sepal.Width'])
-    # print(">> -- Correlation between Sepal.Length and Sepal.Width: " + str(sepalLW))
-    fixedacidityvolatileacidity = np.correlate(dataframe['fixed acidity'], dataframe['volatile acidity'])
-    print('>> -- Correlation between fixed acidity and volatile acidity: ' + str(fixedacidityvolatileacidity))
-
-    fixedaciditycitricacid = np.correlate(dataframe['fixed acidity'], dataframe['citric acid'])
-    print('>> -- Correlation between fixed acidity and citric acid: ' + str(fixedaciditycitricacid))
-
-    fixedacidityresidualsugar = np.correlate(dataframe['fixed acidity'], dataframe['residual sugar'])
-    print('>> -- Correlation between fixed acidity and residual sugar: ' + str(fixedacidityresidualsugar))
-
-    fixedaciditychlorides = np.correlate(dataframe['fixed acidity'], dataframe['chlorides'])
-    print('>> -- Correlation between fixed acidity and chlorides: ' + str(fixedaciditychlorides))
-
-    fixedacidityfreesulfurdioxide = np.correlate(dataframe['fixed acidity'], dataframe['free sulfur dioxide'])
-    print('>> -- Correlation between fixed acidity and free sulfur dioxide: ' + str(fixedacidityfreesulfurdioxide))
-
-    fixedaciditytotalsulfurdioxide = np.correlate(dataframe['fixed acidity'], dataframe['total sulfur dioxide'])
-    print('>> -- Correlation between fixed acidity and total sulfur dioxide: ' + str(fixedaciditytotalsulfurdioxide))
-
-    fixedaciditydensity = np.correlate(dataframe['fixed acidity'], dataframe['density'])
-    print('>> -- Correlation between fixed acidity and density: ' + str(fixedaciditydensity))
-
-    fixedaciditypH = np.correlate(dataframe['fixed acidity'], dataframe['pH'])
-    print('>> -- Correlation between fixed acidity and pH: ' + str(fixedaciditypH))
-
-    fixedaciditysulphates = np.correlate(dataframe['fixed acidity'], dataframe['sulphates'])
-    print('>> -- Correlation between fixed acidity and sulphates: ' + str(fixedaciditysulphates))
-
-    fixedacidityalcohol = np.correlate(dataframe['fixed acidity'], dataframe['alcohol'])
-    print('>> -- Correlation between fixed acidity and alcohol: ' + str(fixedacidityalcohol))
-
-    volatileaciditycitricacid = np.correlate(dataframe['volatile acidity'], dataframe['citric acid'])
-    print('>> -- Correlation between volatile acidity and citric acid: ' + str(volatileaciditycitricacid))
-
-    volatileacidityresidualsugar = np.correlate(dataframe['volatile acidity'], dataframe['residual sugar'])
-    print('>> -- Correlation between volatile acidity and residual sugar: ' + str(volatileacidityresidualsugar))
-
-    volatileaciditychlorides = np.correlate(dataframe['volatile acidity'], dataframe['chlorides'])
-    print('>> -- Correlation between volatile acidity and chlorides: ' + str(volatileaciditychlorides))
-
-    volatileacidityfreesulfurdioxide = np.correlate(dataframe['volatile acidity'], dataframe['free sulfur dioxide'])
-    print('>> -- Correlation between volatile acidity and free sulfur dioxide: ' + str(volatileacidityfreesulfurdioxide))
-
-    volatileaciditytotalsulfurdioxide = np.correlate(dataframe['volatile acidity'], dataframe['total sulfur dioxide'])
-    print('>> -- Correlation between volatile acidity and total sulfur dioxide: ' + str(volatileaciditytotalsulfurdioxide))
-
-    volatileaciditydensity = np.correlate(dataframe['volatile acidity'], dataframe['density'])
-    print('>> -- Correlation between volatile acidity and density: ' + str(volatileaciditydensity))
-
-    volatileaciditypH = np.correlate(dataframe['volatile acidity'], dataframe['pH'])
-    print('>> -- Correlation between volatile acidity and pH: ' + str(volatileaciditypH))
-
-    volatileaciditysulphates = np.correlate(dataframe['volatile acidity'], dataframe['sulphates'])
-    print('>> -- Correlation between volatile acidity and sulphates: ' + str(volatileaciditysulphates))
-
-    volatileacidityalcohol = np.correlate(dataframe['volatile acidity'], dataframe['alcohol'])
-    print('>> -- Correlation between volatile acidity and alcohol: ' + str(volatileacidityalcohol))
-
-    citricacidresidualsugar = np.correlate(dataframe['citric acid'], dataframe['residual sugar'])
-    print('>> -- Correlation between citric acid and residual sugar: ' + str(citricacidresidualsugar))
-
-    citricacidchlorides = np.correlate(dataframe['citric acid'], dataframe['chlorides'])
-    print('>> -- Correlation between citric acid and chlorides: ' + str(citricacidchlorides))
-
-    citricacidfreesulfurdioxide = np.correlate(dataframe['citric acid'], dataframe['free sulfur dioxide'])
-    print('>> -- Correlation between citric acid and free sulfur dioxide: ' + str(citricacidfreesulfurdioxide))
-
-    citricacidtotalsulfurdioxide = np.correlate(dataframe['citric acid'], dataframe['total sulfur dioxide'])
-    print('>> -- Correlation between citric acid and total sulfur dioxide: ' + str(citricacidtotalsulfurdioxide))
-
-    citricaciddensity = np.correlate(dataframe['citric acid'], dataframe['density'])
-    print('>> -- Correlation between citric acid and density: ' + str(citricaciddensity))
-
-    citricacidpH = np.correlate(dataframe['citric acid'], dataframe['pH'])
-    print('>> -- Correlation between citric acid and pH: ' + str(citricacidpH))
-
-    citricacidsulphates = np.correlate(dataframe['citric acid'], dataframe['sulphates'])
-    print('>> -- Correlation between citric acid and sulphates: ' + str(citricacidsulphates))
-
-    citricacidalcohol = np.correlate(dataframe['citric acid'], dataframe['alcohol'])
-    print('>> -- Correlation between citric acid and alcohol: ' + str(citricacidalcohol))
-
-    residualsugarchlorides = np.correlate(dataframe['residual sugar'], dataframe['chlorides'])
-    print('>> -- Correlation between residual sugar and chlorides: ' + str(residualsugarchlorides))
-
-    residualsugarfreesulfurdioxide = np.correlate(dataframe['residual sugar'], dataframe['free sulfur dioxide'])
-    print('>> -- Correlation between residual sugar and free sulfur dioxide: ' + str(residualsugarfreesulfurdioxide))
-
-    residualsugartotalsulfurdioxide = np.correlate(dataframe['residual sugar'], dataframe['total sulfur dioxide'])
-    print('>> -- Correlation between residual sugar and total sulfur dioxide: ' + str(residualsugartotalsulfurdioxide))
-
-    residualsugardensity = np.correlate(dataframe['residual sugar'], dataframe['density'])
-    print('>> -- Correlation between residual sugar and density: ' + str(residualsugardensity))
-
-    residualsugarpH = np.correlate(dataframe['residual sugar'], dataframe['pH'])
-    print('>> -- Correlation between residual sugar and pH: ' + str(residualsugarpH))
-
-    residualsugarsulphates = np.correlate(dataframe['residual sugar'], dataframe['sulphates'])
-    print('>> -- Correlation between residual sugar and sulphates: ' + str(residualsugarsulphates))
-
-    residualsugaralcohol = np.correlate(dataframe['residual sugar'], dataframe['alcohol'])
-    print('>> -- Correlation between residual sugar and alcohol: ' + str(residualsugaralcohol))
-
-    chloridesfreesulfurdioxide = np.correlate(dataframe['chlorides'], dataframe['free sulfur dioxide'])
-    print('>> -- Correlation between chlorides and free sulfur dioxide: ' + str(chloridesfreesulfurdioxide))
-
-    chloridestotalsulfurdioxide = np.correlate(dataframe['chlorides'], dataframe['total sulfur dioxide'])
-    print('>> -- Correlation between chlorides and total sulfur dioxide: ' + str(chloridestotalsulfurdioxide))
-
-    chloridesdensity = np.correlate(dataframe['chlorides'], dataframe['density'])
-    print('>> -- Correlation between chlorides and density: ' + str(chloridesdensity))
-
-    chloridespH = np.correlate(dataframe['chlorides'], dataframe['pH'])
-    print('>> -- Correlation between chlorides and pH: ' + str(chloridespH))
-
-    chloridessulphates = np.correlate(dataframe['chlorides'], dataframe['sulphates'])
-    print('>> -- Correlation between chlorides and sulphates: ' + str(chloridessulphates))
-
-    chloridesalcohol = np.correlate(dataframe['chlorides'], dataframe['alcohol'])
-    print('>> -- Correlation between chlorides and alcohol: ' + str(chloridesalcohol))
-
-    freesulfurdioxidetotalsulfurdioxide = np.correlate(dataframe['free sulfur dioxide'], dataframe['total sulfur dioxide'])
-    print('>> -- Correlation between free sulfur dioxide and total sulfur dioxide: ' + str(freesulfurdioxidetotalsulfurdioxide))
-
-    freesulfurdioxidedensity = np.correlate(dataframe['free sulfur dioxide'], dataframe['density'])
-    print('>> -- Correlation between free sulfur dioxide and density: ' + str(freesulfurdioxidedensity))
-
-    freesulfurdioxidepH = np.correlate(dataframe['free sulfur dioxide'], dataframe['pH'])
-    print('>> -- Correlation between free sulfur dioxide and pH: ' + str(freesulfurdioxidepH))
-
-    freesulfurdioxidesulphates = np.correlate(dataframe['free sulfur dioxide'], dataframe['sulphates'])
-    print('>> -- Correlation between free sulfur dioxide and sulphates: ' + str(freesulfurdioxidesulphates))
-
-    freesulfurdioxidealcohol = np.correlate(dataframe['free sulfur dioxide'], dataframe['alcohol'])
-    print('>> -- Correlation between free sulfur dioxide and alcohol: ' + str(freesulfurdioxidealcohol))
-
-    totalsulfurdioxidedensity = np.correlate(dataframe['total sulfur dioxide'], dataframe['density'])
-    print('>> -- Correlation between total sulfur dioxide and density: ' + str(totalsulfurdioxidedensity))
-
-    totalsulfurdioxidepH = np.correlate(dataframe['total sulfur dioxide'], dataframe['pH'])
-    print('>> -- Correlation between total sulfur dioxide and pH: ' + str(totalsulfurdioxidepH))
-
-    totalsulfurdioxidesulphates = np.correlate(dataframe['total sulfur dioxide'], dataframe['sulphates'])
-    print('>> -- Correlation between total sulfur dioxide and sulphates: ' + str(totalsulfurdioxidesulphates))
-
-    totalsulfurdioxidealcohol = np.correlate(dataframe['total sulfur dioxide'], dataframe['alcohol'])
-    print('>> -- Correlation between total sulfur dioxide and alcohol: ' + str(totalsulfurdioxidealcohol))
-
-    densitypH = np.correlate(dataframe['density'], dataframe['pH'])
-    print('>> -- Correlation between density and pH: ' + str(densitypH))
-
-    densitysulphates = np.correlate(dataframe['density'], dataframe['sulphates'])
-    print('>> -- Correlation between density and sulphates: ' + str(densitysulphates))
-
-    densityalcohol = np.correlate(dataframe['density'], dataframe['alcohol'])
-    print('>> -- Correlation between density and alcohol: ' + str(densityalcohol))
-
-    pHsulphates = np.correlate(dataframe['pH'], dataframe['sulphates'])
-    print('>> -- Correlation between pH and sulphates: ' + str(pHsulphates))
-
-    pHalcohol = np.correlate(dataframe['pH'], dataframe['alcohol'])
-    print('>> -- Correlation between pH and alcohol: ' + str(pHalcohol))
-
-    sulphatesalcohol = np.correlate(dataframe['sulphates'], dataframe['alcohol'])
-    print('>> -- Correlation between sulphates and alcohol: ' + str(sulphatesalcohol))
 
 
 def scale_dataset(dataframe):
@@ -330,19 +139,23 @@ def scale_dataset(dataframe):
     # http://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html
     # looking at the histograms to choose between normal and uniform scaling
 
+    plot = False
+
     # normal scaling
     scaled_data_array = Normalizer().fit_transform(dataframe)
     df_norm = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
 
     # describe_data_frame(df_norm)
-    # plot_feature_histograms(df_norm)
+    if plot:
+        plot_feature_histograms(df_norm, title="Normal Scaled Data Set")
 
     # uniform scaling
-    # scaled_data_array = QuantileTransformer(output_distribution='uniform').fit_transform(dataframe)
-    # df_uni = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
+    scaled_data_array = QuantileTransformer(output_distribution='uniform').fit_transform(dataframe)
+    df_uni = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
 
     # describe_data_frame(df_uni)
-    # plot_feature_histograms(df_uni)
+    if plot:
+        plot_feature_histograms(df_uni, title="Uniform Scaled Data Set")
 
     return df_norm
 
@@ -372,16 +185,14 @@ def create_train_test_set(X, Y):
 
 
 def find_baseline(X_train, X_test, Y_train, Y_test):
-    ''' TODO '''
-    # def loss_func(Y_test, X_test):
-    #     diff = np.abs(ground_truth - predictions).max()
-    #     return np.log(1 + diff)
+    def loss_func(Y_test, X_test):
+        diff = np.abs(ground_truth - predictions).max()
+        return np.log(1 + diff)
 
     reg = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
-    # score = make_scorer(loss_func, greater_is_better=True)
     
-    # baseline_score = reg.score(X_test, Y_test)
-    # print("Baseline Score (R^2): {}".format(baseline_score))
+    baseline_score = reg.score(X_test, Y_test)
+    print("Baseline Score (R^2): {}".format(baseline_score))
 
 
 def create_linear_model(X_train, X_test, Y_train, Y_test):
@@ -390,6 +201,7 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
         - Print the parameter estimates and their 95% confidence intervals in a single table. (Suggest using
           confint()), and cbind()
     '''
+
     X_train = add_constant(X_train)
     regressionResult = OLS(Y_train, X_train).fit()
     print(regressionResult.summary())
@@ -407,6 +219,7 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     # print("Uncentered TSS: {}".format(regressionResult.uncentered_tss))
     # print("DF Model: {}".format(regressionResult.df_model))
     # print("DF Resid: {}".format(regressionResult.df_resid))
+    print("Standard Errors: {}".format(regressionResult.bse))
 
     predictions = regressionResult.predict(X_train)
 
@@ -414,10 +227,26 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     eaic = extractAIC(nobs, p, Y_train, predictions)
     print("Extract AIC: {}".format(eaic))
 
-    # create linear regression object to grab coefficients
-    reg = linear_model.LinearRegression().fit(X_train, Y_train)
+    params = regressionResult.params
 
-    return reg.coef_
+    # n, p = X_test.shape
+    # X_test = add_constant(X_test)
+    # predictions = X_test.dot(params).reshape(n,1)
+
+    # num_matches = 0
+    # for i in range(len(Y_test)):
+    #     p = int(round(predictions[i][0], 0))
+    #     is_match = (Y_test[i] == p)
+
+    #     if is_match:
+    #         num_matches += 1
+
+    #     print("Actual: {}, Predictions: {}... Match: {}".format(Y_test[i], p, is_match))
+
+    # print("Number of matches: {}, Total number of Instances: {}".format(num_matches, n))
+    # print("Percent correct guesses: {}%".format(round((num_matches/n)*100, 3)))
+
+    return params
 
 
 def create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients):
@@ -437,10 +266,27 @@ def create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients):
     rmse = math.sqrt(mean_squared_error(Y_train, predictions))
     print("Root Mean Squared Error: {}".format(rmse))
 
+    # ------------ BEGIN CUSTOM LINEAR MODEL PREDICTIONS ---------------
+
+    predictions = X_train.dot(betas).reshape(n,1)
+
+    num_matches = 0
+    for i in range(len(Y_train)):
+        p = int(round(predictions[i][0], 0))
+        is_match = (Y_train[i] == p)
+
+        if is_match:
+            num_matches += 1
+
+        print("Actual: {}, Predictions: {}... Match: {}".format(Y_train[i], p, is_match))
+
+    print("Number of matches: {}, Total number of Instances: {}".format(num_matches, n))
+    print("Percent correct guesses: {}%".format(round((num_matches/n)*100, 3)))
+
     return Y_train, predictions, betas, n, p
 
 
-def compute_custom_model_statistics(X, nobs, p, betas, actual, predictions):
+def compute_custom_model_statistics(X, X_test, nobs, p, betas, actual, predictions):
     ''' TODO...
         - [QUESTION] If the errors were not nearly normal what might be the problem?
         - [QUESTION] Most residual errors are less than 1, what does that mean ?
@@ -457,7 +303,7 @@ def compute_custom_model_statistics(X, nobs, p, betas, actual, predictions):
 
     # -------------------------------------------------------
 
-    create_summary_table(X, nobs, p, betas, actual, predictions)
+    create_summary_table(X, X_test, nobs, p, betas, actual, predictions)
     return
 
 
@@ -467,12 +313,6 @@ def compute_model_parameters(X, Y):
 
 
 def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
-    ''' TODO...
-        - Print the estimated parameters from the lm() model, your normal solver, and your gradient descent
-          solver side by side. Comment.
-        - Predict the wine quality using the gradient descent parameter using the test set and compare to the
-          actual quality in the test set
-    '''
     def cost(X, Y, B):
         e = np.sum((X.dot(B) - Y[0]) ** 2)
         return e
@@ -494,16 +334,31 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
         dldw = -2 * X_train.T.dot(np.subtract(Y_train[0], X_train.dot(B)))
         B = B - dldw * learning_rate
         c = cost(X_train, Y_train, B)
-        print(c)
 
     print("Gradient Descent Final Cost: {}".format(c))
     print("Gradient Descent Parameters: {}".format(B))
     print("Libraray linear model coefficients: {}".format(coefficients))
 
+    n_test, p_test = X_test.shape
     # Predict the wine quality based on the GD parameters
     predictions = add_constant(X_test).dot(B)
-    # for i in range(len(predictions)):
-    #     print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
+
+    num_matches = 0
+    for i in range(n_test):
+        y = round(Y_train[i][0], 3)
+        p = round(predictions[i][0], 3)
+        is_match = (y == p)
+
+        if is_match:
+            num_matches += 1
+
+        print("Actual: {}, Predictions: {}... Match: {}".format(y, p, is_match))
+
+    print("Number of matches: {}, Total number of Instances: {}".format(num_matches, n_test))
+    print("Percent correct guesses: {}%".format(round((num_matches/n_test)*100, 3)))
+
+    sys.exit()
+
     rmse = math.sqrt(mean_squared_error(Y_test, predictions))
 
     print("Gradient Descent Root Mean Squared Error: {}".format(rmse))
@@ -512,7 +367,7 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
         print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
 
 
-def create_summary_table(X, nobs, p, betas, actual, predictions):
+def create_summary_table(X, X_test, nobs, p, betas, actual, predictions):
     '''
         - Create and print a table similar to that in lm() output for your theta values
           for estimates, compute standard error, T values, and P values.
@@ -537,12 +392,20 @@ def create_summary_table(X, nobs, p, betas, actual, predictions):
 
     # ------------------ BEGIN TABLE OUTPUT ------------------
 
+    # std_err_arr = compute_standard_error(X)
+    std_err_arr = [2.07105460e+01, 2.38423359e-02, 1.30251968e-01, 1.11762701e-01,
+                   8.43493292e-03, 6.48855536e-01, 9.85506087e-04, 4.39725828e-04,
+                   2.10207985e+01, 1.21496023e-01, 1.16605896e-01, 2.67669971e-02]
+
+    t_statistic = compute_t_statistic(std_err_arr, betas)
+    p_statistic = compute_p_statistic(t_statistic, nobs)
+
     print("\nCoefficients:")
     print("\t\tEstimate\tStd. Error\tt-value\t\tPr")
 
-    print("(Intercepts)\t{}".format(round(betas[0][0], 3)))
+    print("(Intercepts)\t{}\t\t{}\t\t{}\t\t{}".format(round(betas[0][0], 3), round(std_err_arr[0], 3), round(t_statistic[0], 3), round(p_statistic[0], 3)))
     for i in range(1, p):
-        print("x{}\t\t{}".format(i, round(betas[i][0], 3)))
+        print("x{}\t\t{}\t\t{}\t\t{}\t\t{}".format(i, round(betas[i][0], 3), round(std_err_arr[i], 3), round(t_statistic[i], 3), round(p_statistic[i], 3)))
 
     # ------------------ BEGIN FOOTER OUTPUT ------------------
     sse = calculate_sse(actual, predictions)
@@ -557,10 +420,10 @@ def create_summary_table(X, nobs, p, betas, actual, predictions):
     dfm = p-1
 
     aic = AIC(nobs, sse, ssr, dfm, actual, predictions)
-    print("Akaike's information criteria (AIC): {}".format(aic))
+    print("\nAkaike's information criteria (AIC): {}".format(aic))
 
     rse = sse / dfr
-    print("\nResidual Standard Error {} on {} degrees of freedom.".format(rse, dfr))
+    # print("\nResidual Standard Error {} on {} degrees of freedom.".format(round(rse, 3), dfr))
 
     r_squared = round(calculate_r_squared(ssr, sst), 3)
     adj_r_squared = round(calculate_adj_r_squared(nobs, ssr, sst, dfr, dfm), 3)
@@ -572,12 +435,14 @@ def create_summary_table(X, nobs, p, betas, actual, predictions):
     f_value = calculate_f_value(mse_model, mse_resid)
     f_pvalue = calculate_fp_value(f_value, dfm, dfr)
 
-    print("F-statistic: {} on {} and {} DF, p-value: {}".format(round(f_value, 3), dfm, dfr, f_pvalue))
+    print("F-statistic: {} on {} and {} DF, p-value: {}\n".format(round(f_value, 3), dfm, dfr, f_pvalue))
 
     return residuals
 
 
 # -------------- BEGIN STATISTICS HELPER FUNCTIONS ---------------------
+# Useful link for calculating statistics on arrays and vectors in Python
+# https://jakevdp.github.io/PythonDataScienceHandbook/02.04-computation-on-arrays-aggregates.html
 
 def calculate_ssr(actual, predictions):
     ''' returns value residual sum of squared errors '''
@@ -661,6 +526,30 @@ def calculate_fp_value(fvalue, dfm, dfr):
     fp = stats.f.sf(fvalue, dfm, dfr)
     fp = "%#6.3g" % fp
     return fp
+
+
+def compute_standard_error(X):
+    ''' returns calculated value of standard errors of matrix X in an array '''
+    cov_matrix = np.cov(X.T, rowvar=True)
+    return np.sqrt(np.diag(cov_matrix))
+
+
+def compute_t_statistic(std_err_arr, coefficients):
+    ''' returns calculated value of t-statistics for each coefficent in an array '''
+    t_stat_arr = []
+    for i in range(len(std_err_arr)):
+        t_stat = (coefficients[i] / std_err_arr[i])[0]
+        t_stat_arr.append(t_stat)
+    return t_stat_arr
+
+
+def compute_p_statistic(t_statistic, n):
+    ''' returns calculated value of p-statistics for each coefficent in an array '''
+    p_stat_arr = []
+    for i in range(len(t_statistic)):
+        pval = stats.t.sf(np.abs(t_statistic[i]), n-1)*2
+        p_stat_arr.append(pval)
+    return p_stat_arr
 
 
 # -------------- END STATISTICS HELPER FUNCTIONS ---------------------
