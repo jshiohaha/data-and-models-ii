@@ -38,16 +38,6 @@ from statsmodels.tools import add_constant
 #   Output variable (based on sensory data): 
 #   12 - quality (score between 0 and 10)
 
-'''
-    [TODO] Question 10
-        - Reduce the number of explanatory variables in your lm() model one by one to find the best model using
-          the AIC criterion (tradeoff between maximum likelihood and number of parameters). (suggest using
-          step(lm(),…))
-        - Increase the number explanatory variables from the intercept alone in your lm() model one by one to
-          find the best model using the AIC criterion
-        - Note that step(lm()) uses extractAIC() not AIC()
-'''
-
 def main():
     '''
         Solution for Problem Set 4 in Data & Models II (RAIK 370H)
@@ -72,12 +62,12 @@ def main():
     scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test = create_train_test_set(scaled_X, scaled_Y)
     # find_baseline(X_train, X_test, Y_train, Y_test)
 
-    # coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
+    coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
-    # gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
+    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
     # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
     # compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
-    find_best_model(X, Y)
+    # find_best_model(X, Y)
 
 
 def load_data_frame(filename):
@@ -455,18 +445,7 @@ def compute_custom_model_statistics(X, nobs, p, betas, actual, predictions):
     return
 
 
-def compute_model_parameters(X, Y):
-    X = add_constant(X)
-    return
-
-
 def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
-    ''' TODO...
-        - Print the estimated parameters from the lm() model, your normal solver, and your gradient descent
-          solver side by side. Comment.
-        - Predict the wine quality using the gradient descent parameter using the test set and compare to the
-          actual quality in the test set
-    '''
     def cost(X, Y, B):
         e = np.sum((X.dot(B) - Y[0]) ** 2)
         return e
@@ -490,8 +469,11 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
         c = cost(X_train, Y_train, B)
 
     print("Gradient Descent Final Cost: {}".format(c))
-    print("Gradient Descent Parameters: {}".format(B))
-    print("Library linear model coefficients: {}".format(coefficients))
+    # print("Gradient Descent Parameters: {}".format(B))
+    # print("Library linear model coefficients: {}".format(coefficients))
+    print("Gradient | Linear:")
+    for i in range(len(B)):
+        print("{} | {}".format(B[i], coefficients[i]))
 
     # Predict the wine quality based on the GD parameters
     predictions = add_constant(X_test).dot(B)
@@ -501,8 +483,8 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
 
     print("Gradient Descent Root Mean Squared Error: {}".format(rmse))
 
-    for i in range(len(predictions)):
-        print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
+    # for i in range(len(predictions)):
+    #     print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
 
 
 def find_best_model(X, Y):
