@@ -64,7 +64,7 @@ def main():
 
     coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
-    # gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
+    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
     # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
     # compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
     # find_best_model(X, Y)
@@ -447,7 +447,7 @@ def compute_custom_model_statistics(X, nobs, p, betas, actual, predictions):
 
 def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
     def cost(X, Y, B):
-        e = np.sum((X.dot(B) - Y[0]) ** 2)
+        e = np.sum((X.dot(B) - Y) ** 2)
         return e
 
     learning_rate = 0.00001
@@ -464,7 +464,7 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
     c = cost(X_train, Y_train, B)
 
     while c > convergence:
-        dldw = -2 * X_train.T.dot(np.subtract(Y_train[0], X_train.dot(B)))
+        dldw = -2 * X_train.T.dot(Y_train - X_train.dot(B))
         B = B - dldw * learning_rate
         c = cost(X_train, Y_train, B)
 
@@ -473,7 +473,7 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
     # print("Library linear model coefficients: {}".format(coefficients))
     print("Gradient | Linear:")
     for i in range(len(B)):
-        print("{} | {}".format(B[i], coefficients[i]))
+        print("{0:.4f} | {1:.4f}".format(B[i][0], coefficients[i]))
 
     # Predict the wine quality based on the GD parameters
     predictions = add_constant(X_test).dot(B)
@@ -482,27 +482,6 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
     rmse = math.sqrt(mean_squared_error(Y_test, predictions))
 
     print("Gradient Descent Root Mean Squared Error: {}".format(rmse))
-
-    # for i in range(len(predictions)):
-    #     print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
-
-
-def find_best_model(X, Y):
-    x_rows, x_columns = X.shape
-    aic = {}
-    for k in range(1, x_columns):
-        for v in itertools.combinations(range(0, x_columns), k):
-            # print(v)
-            # print(list(v))
-            p = X[:, list(v)]
-            # print("P: {}".format(p))
-            # print("X Shape: {}".format(p.shape))
-            # print("Y Shape: {}".format(Y.shape))
-            regr = OLS(Y, add_constant(p)).fit()
-            aic[v] = regr.aic
-            print("V: {} \n AIC: {} \n \n".format(v, aic[v]))
-    print(pd.Series(aic).idxmin())
-    return
 
 
 def create_summary_table(X, nobs, p, betas, actual, predictions):

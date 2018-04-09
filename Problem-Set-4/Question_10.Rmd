@@ -24,6 +24,5 @@ source("PrintLib.R")
 data = read.csv("Data/winequality-white.csv")
 step(lm(quality ~ fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data = data), direction="backward")
 
-
 step(lm(quality ~ fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data = data), direction="forward")
 ```
