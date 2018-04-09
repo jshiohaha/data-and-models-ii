@@ -64,7 +64,7 @@ def main():
 
     coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
-    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
+    # gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
     # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
     # compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
     # find_best_model(X, Y)
@@ -325,7 +325,7 @@ def scale_dataset(dataframe):
     scaled_data_array = Normalizer().fit_transform(dataframe)
     df_norm = pd.DataFrame(scaled_data_array, index=dataframe.index, columns=dataframe.columns)
 
-    # describe_data_frame(df_norm)
+    describe_data_frame(df_norm)
     # plot_feature_histograms(df_norm)
 
     # uniform scaling
