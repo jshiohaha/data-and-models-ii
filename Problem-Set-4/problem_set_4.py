@@ -63,9 +63,8 @@ def main():
     # find_baseline(X_train, X_test, Y_train, Y_test)
 
     coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
-    # compute_model_parameters(X, Y)
-    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
-    # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
+    actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
+    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients, betas)
     # compute_custom_model_statistics(X_test, nobs, p, betas, actual, predictions)
     # find_best_model(X, Y)
 
@@ -445,7 +444,7 @@ def compute_custom_model_statistics(X, nobs, p, betas, actual, predictions):
     return
 
 
-def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
+def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients, betas):
     def cost(X, Y, B):
         e = np.sum((X.dot(B) - Y) ** 2)
         return e
@@ -469,11 +468,9 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
         c = cost(X_train, Y_train, B)
 
     print("Gradient Descent Final Cost: {}".format(c))
-    # print("Gradient Descent Parameters: {}".format(B))
-    # print("Library linear model coefficients: {}".format(coefficients))
-    print("Gradient | Linear:")
+    print("lm() | Normal | Gradient:")
     for i in range(len(B)):
-        print("{0:.4f} | {1:.4f}".format(B[i][0], coefficients[i]))
+        print("{0:.4f} & {1:.4f} & {2:.4f}".format(coefficients[i], betas[i][0], B[i][0]))
 
     # Predict the wine quality based on the GD parameters
     predictions = add_constant(X_test).dot(B)
