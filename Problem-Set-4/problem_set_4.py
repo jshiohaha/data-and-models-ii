@@ -5,6 +5,7 @@ import pandas as pd
 import math as  math
 import matplotlib.pyplot as plt
 import operator
+import itertools
 
 import pprint
 
@@ -62,7 +63,6 @@ def main():
     # plot_feature_histograms(df)
     X, Y = create_matrix_and_vector_from_data_frame(df)
     X_train, X_test, Y_train, Y_test = create_train_test_set(X, Y)
-    find_baseline(X_train, X_test, Y_train, Y_test)
 
     scaled_df = scale_dataset(df)
     scaled_X, scaled_Y = create_matrix_and_vector_from_data_frame(scaled_df)
@@ -71,9 +71,8 @@ def main():
 
     coefficients = create_linear_model(X_train, X_test, Y_train, Y_test)
     # compute_model_parameters(X, Y)
-    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients)
-    # actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
-    # sys.exit()
+    actual, predictions, betas, nobs, p = create_custom_linear_model(X_train, X_test, Y_train, Y_test, coefficients)
+    gradient_descent_solver(scaled_X_train, scaled_X_test, scaled_Y_train, scaled_Y_test, coefficients, betas)
     # compute_custom_model_statistics(X_train, X_test, nobs, p, betas, actual, predictions)
 
 
@@ -185,13 +184,13 @@ def create_train_test_set(X, Y):
 
 
 def find_baseline(X_train, X_test, Y_train, Y_test):
-    def loss_func(Y_test, X_test):
-        diff = np.abs(ground_truth - predictions).max()
-        return np.log(1 + diff)
+    # def loss_func(Y_test, X_test):
+    #     diff = np.abs(ground_truth - predictions).max()
+    #     return np.log(1 + diff)
 
-    reg = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
-    
-    baseline_score = reg.score(X_test, Y_test)
+    fitModel = DummyClassifier(strategy='stratified').fit(X_train, Y_train)
+    baseline_score = fitModel.score(X_test, Y_test)
+
     print("Baseline Score (R^2): {}".format(baseline_score))
 
 
@@ -312,9 +311,9 @@ def compute_model_parameters(X, Y):
     return
 
 
-def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
+def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients, betas):
     def cost(X, Y, B):
-        e = np.sum((X.dot(B) - Y[0]) ** 2)
+        e = np.sum((X.dot(B) - Y) ** 2)
         return e
 
     learning_rate = 0.00001
@@ -331,13 +330,14 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
     c = cost(X_train, Y_train, B)
 
     while c > convergence:
-        dldw = -2 * X_train.T.dot(np.subtract(Y_train[0], X_train.dot(B)))
+        dldw = -2 * X_train.T.dot(Y_train - X_train.dot(B))
         B = B - dldw * learning_rate
         c = cost(X_train, Y_train, B)
 
     print("Gradient Descent Final Cost: {}".format(c))
-    print("Gradient Descent Parameters: {}".format(B))
-    print("Libraray linear model coefficients: {}".format(coefficients))
+    print("lm() | Normal | Gradient:")
+    for i in range(len(B)):
+        print("{0:.4f} & {1:.4f} & {2:.4f}".format(coefficients[i], betas[i][0], B[i][0]))
 
     n_test, p_test = X_test.shape
     # Predict the wine quality based on the GD parameters
@@ -362,9 +362,6 @@ def gradient_descent_solver(X_train, X_test, Y_train, Y_test, coefficients):
     rmse = math.sqrt(mean_squared_error(Y_test, predictions))
 
     print("Gradient Descent Root Mean Squared Error: {}".format(rmse))
-
-    for i in range(len(predictions)):
-        print("Actual quality: {}, Predicted quality: {}".format(Y_test[i], predictions[i]))
 
 
 def create_summary_table(X, X_test, nobs, p, betas, actual, predictions):

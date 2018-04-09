@@ -1,0 +1,28 @@
+---
+title: "Problem Set 4, Problem 10"
+author: "Reid Gahan"
+date: "4/8/2018"
+output: pdf_document
+---
+
+```{r echo = FALSE, messages=FALSE, warning=FALSE, include=FALSE}
+library('econ311')
+library('moments')
+ECHO = TRUE ; EVAL = TRUE ; TIDY = TRUE ; WARNING= FALSE
+color = c('blue','red','purple','green', 'orange', 'cyan', 'blue','red','purple','green', 'orange', 'cyan')
+TINY = "350px"; SMALL = "450px" ; MEDIUM = "550px"
+OUT = "650px" ; LARGE = "750px"
+WIDTH = 6  ; HEIGHT = 4 # fig.width = 4, fig.height = 4
+options(scipen=999)
+set.seed(101)
+par(mfrow=c(1,1))
+setwd("/Users/reidgahan/Desktop/School/ML/data-and-models-ii/Problem-Set-4")
+source("PrintLib.R")
+```
+
+```{r eval = EVAL, echo = ECHO, warning = WARNING}
+data = read.csv("Data/winequality-white.csv")
+step(lm(quality ~ fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data = data), direction="backward")
+
+step(lm(quality ~ fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data = data), direction="forward")
+```
