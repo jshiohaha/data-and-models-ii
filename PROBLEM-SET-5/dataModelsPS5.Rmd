@@ -1,3 +1,5 @@
+\usepackage[obeyspaces]{url}
+
 ---
 title: "Problem Set 5"
 author: "Jacob Miller, Jacob Shiohira, Reid Gahan"
@@ -6,6 +8,13 @@ output: pdf_document
 ---
 
 ```{r echo = FALSE, messages=FALSE, warning=FALSE, include=FALSE}
+# NOTE: You must first install the following packages for your machine's R installation before this RMD file will compile.
+library(mice)
+library(lattice)
+library(dplyr)
+library(corrplot)
+library(pscl)
+
 workingDirectory = "/Users/jacobshiohira/Desktop/ACADEMICS/JUNYA/SPRING/DATA-MODELS-II/PROBLEM-SETS/PROBLEM-SET-5"
 
 setwd(workingDirectory)
@@ -23,48 +32,141 @@ date()
 \subsection*{Problem 1}
 ```{r echo = TRUE}
 # - Read in the Framinham data set
-dataset <- read.csv("Data/framingham.csv", stringsAsFactors=FALSE)
+df <- read.csv("Data/framingham.csv", stringsAsFactors = FALSE)
 
-# - How many observations? How many features (explanatory variables) ?
+# - How many observations? How many features (explanatory variables)?
+str(df)
+```
+
+The output above tells us there are a total of $4,240$ observations and $16$ features in the dataset. The total number of observations in this case includes rows with possible NAN values.
+
+\newpage
+
+```{r echo = TRUE}
+summary(df)
 
 # - Explore the data (plots, tables, statistics) including feature types.
+M <- cor(mtcars)
+corrplot(M, method = "circle")
+pairs(df)
 
+df_as_numeric <- sapply(df, as.numeric)
+hist(df_as_numeric, freq=FALSE, xlab="Dataframe values", main="Distribution of Dataset Values", col="lightgreen")
+
+# Count the total number of rows with at least one NAN value
+df_nonnan <- na.omit(df)
+num_null_rows <- nrow(df) - nrow(df_nonnan)
+```
+
+
+```{r echo = FALSE}
+psi("Total number of rows with at least one NAN value: ", num_null_rows)
+```
+
+
+```{r echo = TRUE}
 # - Summarize any NA’s by feature
+na_count <-sapply(df, function(y) sum(length(which(is.na(y)))))
+na_count <- data.frame(na_count)
+```
+
+\noindent
+Below is a table outlining the number of NAN Values per feature. Note that the sum of NAN values across features is greater than the total number of rows with at least one NAN value because a single row could have multiple NAN values.
+
+```{r echo = FALSE}
+na_count
 ```
 
 \subsection*{Problem 2}
 ```{r echo = TRUE}
+n <- nrow(df)
+
 # - Resolve any NA’s. Describe your method. I used mice()
-# - Do you suggest scaling data or not? If so, normal or uniform scaling? If scaling is advisable, then do so. (An iterative solver will be used below.)
-# - Randomly split data with 80% in the training set and 20% in the test set.
+# Documentation: https://www.rdocumentation.org/packages/mice/versions/2.25/topics/mice
+# Using mice: http://web.maths.unsw.edu.au/~dwarton/missingDataLab.html, search for "pmm" method
+# NOTE: changing the maxit param will affect the time it takes for mice() to run
+imputed_df = mice(df,m=5,maxit=20,meth="pmm",printFlag=FALSE,seed=500)
+imputed_df <- complete(imputed_df)
+summary(imputed_df)
+
+# -- Uniformly then Normally scaling the dataset. Reference the histogram plots to verify the best type of scaling, if even necessary.
+imputed_df <- sapply(imputed_df, as.numeric)
+hist(imputed_df, xlab="Dataframe values", main="Distribution of Imputed Dataset Values", col="orange")
+
+unif_df <- ScaleUnif(imputed_df)
+hist(unif_df, xlab="Dataframe values", main="Distribution of Uniformly Scaled Dataset Values", col="violet")
+
+norm_df <- ScaleNorm(imputed_df)
+hist(norm_df, xlab="Dataframe values", main="Distribution of Normally Scaled Dataset Values", col="blue")
+
+# -- Shuffle the dataset then split data with 80% in the training set and 20% in the test set.
+set.seed(1)
+
+shuffled_df <- df[sample(n),]
+
+trainset <- shuffled_df[1:round(0.8 * n), ]
+testset <- shuffled_df[(round(0.8 * n) + 1):n, ]
+
 # - Provide a baseline accuracy by reviewing the TenYearCHD binary variable
+# ---- TODO
+
 # - What is the postive predictive rate (precision) of your baseline prediction ?
-# - Which error type seems worse and thus should be considered along with accuracy in your predictions below? Why ?
+# ---- TODO
+
+# - Which error type seems worse and thus should be considered along with accuracy in your predictions below? Why?
+# ---- TODO
 ```
 
 \subsection*{Problem 3}
+\noindent
+A note on the output from \path{anova(...)}. The difference between the null deviance and the residual deviance shows how our model is doing against the null model (a model with only the intercept). The wider this gap, the better. Analyzing the table we can see the drop in deviance when adding each variable one at a time.
+
 ```{r echo = TRUE}
-# - Create a ‘null’ logistic regression model with glm() using only the intercept feature. Use glm’s binomial family with the logit link.
-# - Create a ‘full’ logistic regression model with glm() using all of the features including the intercept (Suggest lableling the model objects as modelNULL and modelFULL for clarity)
+# Logistic Regression: http://ww2.coastal.edu/kingw/statistics/R-tutorials/logistic.html
+
+# - Create a 'null' logistic regression model with glm() using only the intercept feature. Use glm’s binomial family with the logit link.
+# https://datascienceplus.com/perform-logistic-regression-in-r/
+model <- glm(TenYearCHD ~.,family=binomial(link='logit'), data=trainset)
+summary(model)
+
+anova(model, test="Chisq")
+
+# - Create a 'full' logistic regression model with glm() using all of the features including the intercept (Suggest lableling the model objects as modelNULL and modelFULL for clarity)
+# -- TODO
+
 # - Print summary() for both models
-# - Print the log likelihood, the deviance, and the AIC using logLik(model), model$deviance, and AIC(model) for both models
+# -- TODO
+
+# Calculates and outputs the log likelihood, log likelihood of null model ...
+# -- TODO: calculate AIC using logLik(model), model$deviance, and AIC(model) for both models
+pR2(model)
+
 # - Compare the models and comment
+# -- TODO
 ```
 
 \subsection*{Problem 4}
 ```{r echo = TRUE}
 # - Create the lowest AIC (‘best’) model using backward elimination of parameters. (Suggest labeling the model as modelBEST for clarity and use of step(, trace =0)
+
 # - Print the summary(), the log likelihood, the deviance, and the AIC for this model and compare with the previous two models.
+
 # - Print these ‘best’ parameters (coefficients) along with their 95% confidence intervals in a single table
+
 ```
 
 \subsection*{Problem 5}
 ```{r echo = TRUE}
 # - Using the ‘best’ model, “predict” the 10YrCHD on the training set.
+
 # - Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Use a probability threshold (cutoff) of .5 to make the binary decisions from the probabilities.
+
 # - Compare to the baseline model from Question 2
+
 # - Now predict the 10YrCHD on the test set
+
 # - Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Again, use a probability threshold (cutoff) of .5 again.
+
 ```
 
 \subsection*{Problem 6}
@@ -72,34 +174,51 @@ dataset <- read.csv("Data/framingham.csv", stringsAsFactors=FALSE)
 # Now use ROC curves to reconsider a threshold (cutoff) of .5 using the ROCR (or other) package
 
 # - Create the prediction object for the training set
+
 # - Plot the accuracy v. the threshold (cutoff)
+
 # - Plot the true positive rate v. the false positive rate and label the threshold values
+
 # - Plot sensitivity v. specificity and label the threshold values
+
 # - Plot precision v. recall and label the threshold values
+
 # - Comment on your findings for each plot
+
 # - Compute AUC for the three models (null, full, and best) and comment
+
 ```
 
 \subsection*{Problem 7}
 ```{r echo = TRUE}
 # Using gradient descent, solve for the parameters from the ‘best backward eliminaton’ data set and verify relative to the glm() parameters
+
 # -Create the and test and training sets
+
 # -Compute the parameters (coefficients)
+
 # -Compare to glm()’s coefficients in a single table
+
 ```
 
 \subsection*{Problem 8}
 ```{r echo = TRUE}
 # - look at assignment doc for this problem
+
 ```
 
 \subsection*{Problem 9}
 ```{r echo = TRUE}
 # - Chose another predictive method that you think might produce similar or better results on the Framingham study.
+
 # -Implement using library functions on the training set
+
 # -Create confusion tables for predicting on the test set. You may use any solution parameters or tuning options.
+
 # -Display the accuracy and the true positive and negative error rates
+
 # -Comment on why this method did or did not result in better accuracy or a better true positive rate (precision.) No need to keep trying other methods if you didn’t pick a winner initially, just explain why the method was weaker on this data set.
+
 ```
 
 \subsection*{Problem 10}
@@ -108,3 +227,12 @@ dataset <- read.csv("Data/framingham.csv", stringsAsFactors=FALSE)
 
 # - How is that method different from logistic regression? One paragraph is sufficient, full understanding is not required, just the essential idea.
 ```
+
+\noindent
+\textbf{What is Logistic Regression?} Logistic regression is the appropriate regression analysis to conduct when the dependent variable is dichotomous (binary).  Like all regression analyses, the logistic regression is a predictive analysis.  Logistic regression is used to describe data and to explain the relationship between one dependent binary variable and one or more nominal, ordinal, interval or ratio-level independent variables. \\
+
+\noindent
+Sometimes logistic regressions are difficult to interpret; the Intellectus Statistics tool easily allows you to conduct the analysis, then in plain English interprets the output.
+
+\noindent
+\textbf{Excerpt from Study}: Statistical tests included age-adjusted linear regression or logistic regression to test for trends across blood pressure, TC, LDL-C, and HDL-C categories. Age-adjusted Cox proportional hazards regression and its accompanying c statistic were used to test for the relation between various independent variables and the CHD outcome and to evaluate the discriminatory ability of various prediction models. The 12-year follow-up was used in the proportional hazards models, and results were adapted to provide 10-year CHD incidence estimates. Separate score sheets were developed for each sex using TC and LDL-C categories. These sheets adapted the results of proportional hazards regressions by use of a system that assigned points for each risk factor based on the value for the corresponding β-coefficient of the regression analyses.
