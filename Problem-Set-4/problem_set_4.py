@@ -218,7 +218,8 @@ def create_linear_model(X_train, X_test, Y_train, Y_test):
     # print("Uncentered TSS: {}".format(regressionResult.uncentered_tss))
     # print("DF Model: {}".format(regressionResult.df_model))
     # print("DF Resid: {}".format(regressionResult.df_resid))
-    print("Standard Errors: {}".format(regressionResult.bse))
+    # print("Standard Errors: {}".format(regressionResult.bse))
+    print("Confidence: {}".format(regressionResult.conf_int()))
 
     predictions = regressionResult.predict(X_train)
 

@@ -1,0 +1,110 @@
+---
+title: "Problem Set 5"
+author: "Jacob Miller, Jacob Shiohira, Reid Gahan"
+date: "4/14/2018"
+output: pdf_document
+---
+
+```{r echo = FALSE, messages=FALSE, warning=FALSE, include=FALSE}
+workingDirectory = "/Users/jacobshiohira/Desktop/ACADEMICS/JUNYA/SPRING/DATA-MODELS-II/PROBLEM-SETS/PROBLEM-SET-5"
+
+setwd(workingDirectory)
+# Include Keck Lib Utility Functions
+source("KeckLib.R")
+ECHO = TRUE
+EVAL = TRUE
+OUT = "750px"
+SMALL = "350px"
+MEDIUM = "550px"
+LARGE = "750px"
+date()
+```
+
+\subsection*{Problem 1}
+```{r echo = TRUE}
+# - Read in the Framinham data set
+dataset <- read.csv("Data/framingham.csv", stringsAsFactors=FALSE)
+
+# - How many observations? How many features (explanatory variables) ?
+
+# - Explore the data (plots, tables, statistics) including feature types.
+
+# - Summarize any NA’s by feature
+```
+
+\subsection*{Problem 2}
+```{r echo = TRUE}
+# - Resolve any NA’s. Describe your method. I used mice()
+# - Do you suggest scaling data or not? If so, normal or uniform scaling? If scaling is advisable, then do so. (An iterative solver will be used below.)
+# - Randomly split data with 80% in the training set and 20% in the test set.
+# - Provide a baseline accuracy by reviewing the TenYearCHD binary variable
+# - What is the postive predictive rate (precision) of your baseline prediction ?
+# - Which error type seems worse and thus should be considered along with accuracy in your predictions below? Why ?
+```
+
+\subsection*{Problem 3}
+```{r echo = TRUE}
+# - Create a ‘null’ logistic regression model with glm() using only the intercept feature. Use glm’s binomial family with the logit link.
+# - Create a ‘full’ logistic regression model with glm() using all of the features including the intercept (Suggest lableling the model objects as modelNULL and modelFULL for clarity)
+# - Print summary() for both models
+# - Print the log likelihood, the deviance, and the AIC using logLik(model), model$deviance, and AIC(model) for both models
+# - Compare the models and comment
+```
+
+\subsection*{Problem 4}
+```{r echo = TRUE}
+# - Create the lowest AIC (‘best’) model using backward elimination of parameters. (Suggest labeling the model as modelBEST for clarity and use of step(, trace =0)
+# - Print the summary(), the log likelihood, the deviance, and the AIC for this model and compare with the previous two models.
+# - Print these ‘best’ parameters (coefficients) along with their 95% confidence intervals in a single table
+```
+
+\subsection*{Problem 5}
+```{r echo = TRUE}
+# - Using the ‘best’ model, “predict” the 10YrCHD on the training set.
+# - Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Use a probability threshold (cutoff) of .5 to make the binary decisions from the probabilities.
+# - Compare to the baseline model from Question 2
+# - Now predict the 10YrCHD on the test set
+# - Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Again, use a probability threshold (cutoff) of .5 again.
+```
+
+\subsection*{Problem 6}
+```{r echo = TRUE}
+# Now use ROC curves to reconsider a threshold (cutoff) of .5 using the ROCR (or other) package
+
+# - Create the prediction object for the training set
+# - Plot the accuracy v. the threshold (cutoff)
+# - Plot the true positive rate v. the false positive rate and label the threshold values
+# - Plot sensitivity v. specificity and label the threshold values
+# - Plot precision v. recall and label the threshold values
+# - Comment on your findings for each plot
+# - Compute AUC for the three models (null, full, and best) and comment
+```
+
+\subsection*{Problem 7}
+```{r echo = TRUE}
+# Using gradient descent, solve for the parameters from the ‘best backward eliminaton’ data set and verify relative to the glm() parameters
+# -Create the and test and training sets
+# -Compute the parameters (coefficients)
+# -Compare to glm()’s coefficients in a single table
+```
+
+\subsection*{Problem 8}
+```{r echo = TRUE}
+# - look at assignment doc for this problem
+```
+
+\subsection*{Problem 9}
+```{r echo = TRUE}
+# - Chose another predictive method that you think might produce similar or better results on the Framingham study.
+# -Implement using library functions on the training set
+# -Create confusion tables for predicting on the test set. You may use any solution parameters or tuning options.
+# -Display the accuracy and the true positive and negative error rates
+# -Comment on why this method did or did not result in better accuracy or a better true positive rate (precision.) No need to keep trying other methods if you didn’t pick a winner initially, just explain why the method was weaker on this data set.
+```
+
+\subsection*{Problem 10}
+```{r echo = TRUE}
+# - Read the technical paper ==> http://circ.ahajournals.org/content/97/18/1837
+
+# - How is that method different from logistic regression? One paragraph is sufficient, full understanding is not required, just the essential idea.
+```
