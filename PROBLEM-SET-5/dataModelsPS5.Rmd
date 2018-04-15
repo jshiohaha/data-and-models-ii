@@ -14,6 +14,8 @@ library(lattice)
 library(dplyr)
 library(corrplot)
 library(pscl)
+library(Metrics)
+library(caret)
 
 workingDirectory = "/Users/jacobshiohira/Desktop/ACADEMICS/JUNYA/SPRING/DATA-MODELS-II/PROBLEM-SETS/PROBLEM-SET-5"
 
@@ -65,7 +67,7 @@ psi("Total number of rows with at least one NAN value: ", num_null_rows)
 
 
 ```{r echo = TRUE}
-# - Summarize any NA’s by feature
+# - Summarize any NA's by feature
 na_count <-sapply(df, function(y) sum(length(which(is.na(y)))))
 na_count <- data.frame(na_count)
 ```
@@ -81,7 +83,7 @@ na_count
 ```{r echo = TRUE}
 n <- nrow(df)
 
-# - Resolve any NA’s. Describe your method. I used mice()
+# - Resolve any NA's. Describe your method. I used mice()
 # Documentation: https://www.rdocumentation.org/packages/mice/versions/2.25/topics/mice
 # Using mice: http://web.maths.unsw.edu.au/~dwarton/missingDataLab.html, search for "pmm" method
 # NOTE: changing the maxit param will affect the time it takes for mice() to run
@@ -98,7 +100,9 @@ hist(unif_df, xlab="Dataframe values", main="Distribution of Uniformly Scaled Da
 
 norm_df <- ScaleNorm(imputed_df)
 hist(norm_df, xlab="Dataframe values", main="Distribution of Normally Scaled Dataset Values", col="blue")
+```
 
+```{r echo = TRUE}
 # -- Shuffle the dataset then split data with 80% in the training set and 20% in the test set.
 set.seed(1)
 
@@ -107,14 +111,30 @@ shuffled_df <- df[sample(n),]
 trainset <- shuffled_df[1:round(0.8 * n), ]
 testset <- shuffled_df[(round(0.8 * n) + 1):n, ]
 
-# - Provide a baseline accuracy by reviewing the TenYearCHD binary variable
-# ---- TODO
+# Baseline model - predict the mean of the training data with the TenYearCHD binary response variable
+# TODO: should this be rounded as TenYearCHD is a nominal response variable?
+trainset_mean <- round(mean(trainset$TenYearCHD))
+ 
+# Evaluate RMSE and MAE on the testing data
+RMSE_baseline <- sqrt(mean((trainset_mean-testset$TenYearCHD)^2))
+psp("Baseline RMSE: ", RMSE_baseline, 2)
+
+MAE_baseline <- mean(abs(trainset_mean-testset$TenYearCHD))
+psp("Baseline Mean Absolute Error: ", MAE_baseline, 2)
 
 # - What is the postive predictive rate (precision) of your baseline prediction ?
-# ---- TODO
+
+TenYearCHDAsTable <- table(testset$TenYearCHD)
+
+truepositive <- TenYearCHDAsTable[names(TenYearCHDAsTable)==trainset_mean]
+faslepositive <- TenYearCHDAsTable[names(TenYearCHDAsTable)!=trainset_mean]
+ppv = truepositive / (truepositive + faslepositive)
+psp("Postive Predictive Rate (precision): ", ppv, 2)
 
 # - Which error type seems worse and thus should be considered along with accuracy in your predictions below? Why?
-# ---- TODO
+# -- TODO: Ask Keck exactly what this means?
+baseline_accuracy <- Metrics::accuracy(testset$TenYearCHD, trainset_mean)
+psp("Baseline Accuracy: ", baseline_accuracy, 2)
 ```
 
 \subsection*{Problem 3}
@@ -124,40 +144,49 @@ A note on the output from \path{anova(...)}. The difference between the null dev
 ```{r echo = TRUE}
 # Logistic Regression: http://ww2.coastal.edu/kingw/statistics/R-tutorials/logistic.html
 
-# - Create a 'null' logistic regression model with glm() using only the intercept feature. Use glm’s binomial family with the logit link.
+# - Create a 'null' logistic regression model with glm() using only the intercept feature. Use glm's binomial family with the logit link.
 # https://datascienceplus.com/perform-logistic-regression-in-r/
-model <- glm(TenYearCHD ~.,family=binomial(link='logit'), data=trainset)
-summary(model)
+# TODO: how to create a null model in R?
 
-anova(model, test="Chisq")
-
-# - Create a 'full' logistic regression model with glm() using all of the features including the intercept (Suggest lableling the model objects as modelNULL and modelFULL for clarity)
-# -- TODO
+# - Create a 'full' logistic regression model with glm() using all of the features including the intercept
+modelFULL <- glm(TenYearCHD ~.,family=binomial(link='logit'), data=trainset)
 
 # - Print summary() for both models
-# -- TODO
+summary(modelFULL)
 
-# Calculates and outputs the log likelihood, log likelihood of null model ...
-# -- TODO: calculate AIC using logLik(model), model$deviance, and AIC(model) for both models
+# Calculates and outputs logLik(model), model$deviance, and AIC(model) for full model
+# TODO: output same statistics for null model
+modelFULLPredictions <- predict(modelFULL, testset)
+
+modelFULLAIC <- AIC(modelFULL)
+psi("Full Model AIC: ", modelFULLAIC)
+modelFULLll <- logLik(modelFULL)
+psi("Full Model Log likelihood: ", modelFULLll)
+modelFULLDeviance <- modelFULL$deviance
+psi("Full Model Deviance: ", modelFULLDeviance)
+
+# Calculates llh, llhNull, G2, McFadden, r2ML, r2CU 
 pR2(model)
 
 # - Compare the models and comment
-# -- TODO
+#anova(modelFULL, test="Chisq")
+#plot(modelFULL)
+
 ```
 
 \subsection*{Problem 4}
 ```{r echo = TRUE}
-# - Create the lowest AIC (‘best’) model using backward elimination of parameters. (Suggest labeling the model as modelBEST for clarity and use of step(, trace =0)
+# - Create the lowest AIC ('best') model using backward elimination of parameters. (Suggest labeling the model as modelBEST for clarity and use of step(, trace =0)
 
 # - Print the summary(), the log likelihood, the deviance, and the AIC for this model and compare with the previous two models.
 
-# - Print these ‘best’ parameters (coefficients) along with their 95% confidence intervals in a single table
+# - Print these 'best' parameters (coefficients) along with their 95% confidence intervals in a single table
 
 ```
 
 \subsection*{Problem 5}
 ```{r echo = TRUE}
-# - Using the ‘best’ model, “predict” the 10YrCHD on the training set.
+# - Using the 'best' model, “predict” the 10YrCHD on the training set.
 
 # - Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Use a probability threshold (cutoff) of .5 to make the binary decisions from the probabilities.
 
@@ -191,13 +220,13 @@ pR2(model)
 
 \subsection*{Problem 7}
 ```{r echo = TRUE}
-# Using gradient descent, solve for the parameters from the ‘best backward eliminaton’ data set and verify relative to the glm() parameters
+# Using gradient descent, solve for the parameters from the 'best backward eliminaton' data set and verify relative to the glm() parameters
 
 # -Create the and test and training sets
 
 # -Compute the parameters (coefficients)
 
-# -Compare to glm()’s coefficients in a single table
+# -Compare to glm()'s coefficients in a single table
 
 ```
 
@@ -217,7 +246,7 @@ pR2(model)
 
 # -Display the accuracy and the true positive and negative error rates
 
-# -Comment on why this method did or did not result in better accuracy or a better true positive rate (precision.) No need to keep trying other methods if you didn’t pick a winner initially, just explain why the method was weaker on this data set.
+# -Comment on why this method did or did not result in better accuracy or a better true positive rate (precision.) No need to keep trying other methods if you didn't pick a winner initially, just explain why the method was weaker on this data set.
 
 ```
 
