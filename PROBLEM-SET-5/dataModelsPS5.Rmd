@@ -237,12 +237,12 @@ grid()
 
 # - Plot sensitivity v. specificity and label the threshold values
 sensVsSpecPerf <- ROCR::performance(rocrPred, measure = "sens", x.measure = "spec") 
-plot(sensVsSpecPerf, colorize=F, colorize.palette=rev(rainbow(256)))
+plot(sensVsSpecPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
 grid()
 
 # - Plot precision v. recall and label the threshold values
 precVsRecallPerf <- ROCR::performance(rocrPred, measure = "prec", x.measure = "rec") 
-plot(precVsRecallPerf, colorize=F, colorize.palette=rev(rainbow(256)))
+plot(precVsRecallPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
 grid()
 
 # - Comment on your findings for each plot
