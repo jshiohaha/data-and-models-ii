@@ -19,7 +19,8 @@ library(caret)
 library(ROCR)
 library(sigmoid)
 
-workingDirectory = "/Users/jacobshiohira/Documents/ACADEMICS/JUNYA/SPRING/DATA-MODELS-II/PROBLEM-SETS/PROBLEM-SET-5"
+# Change as needed
+workingDirectory = "/Users/reidgahan/Desktop/School/ML/data-and-models-ii/PROBLEM-SET-5"
 
 setwd(workingDirectory)
 # Include Keck Lib Utility Functions
@@ -216,6 +217,8 @@ testSetPredictions <- sigmoid::sigmoid(predict(modelBest, newdata=testset, type=
 
 # -- Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Displayed using output function from KeckLib.R
 t = table(actual = testset$TenYearCHD, predict = testSetPredictions > 0.5)
+
+# I'm getting an error here... something with "colname"length of 'dimnames' [2] not equal to array extent"" -- Reid
 acc(t, FALSE)
 ```
 
@@ -248,8 +251,23 @@ grid()
 # - Comment on your findings for each plot
 # TODO...
 
-# - TODO: Compute AUC for the three models (null, full, and best) and comment
+# - TODO: Comment
+# Using best
+best.auc.perf <- ROCR::performance(rocrPred, measure="auc")
+psr("AUC value for the 'best' model", best.auc.perf@y.values[[1]], 4)
 
+# Create predictions using ROCR for null and full
+null_trainingSetPredictions <- sigmoid::sigmoid(predict(modelNull, newdata=trainset), method = "logistic", inverse = FALSE, SoftMax = FALSE)
+null_rocrPred <- ROCR::prediction(data.frame(null_trainingSetPredictions)[,1], trainset$TenYearCHD)
+
+null.auc.perf <- ROCR::performance(null_rocrPred, measure="auc")
+psr("AUC value for the 'null' model", null.auc.perf@y.values[[1]], 4)
+
+full_trainingSetPredictions <- sigmoid::sigmoid(predict(modelFull, newdata=trainset), method = "logistic", inverse = FALSE, SoftMax = FALSE)
+full_rocrPred <- ROCR::prediction(data.frame(full_trainingSetPredictions)[,1], trainset$TenYearCHD)
+
+full.auc.perf <- ROCR::performance(full_rocrPred, measure="auc")
+psr("AUC value for the 'full' model", full.auc.perf@y.values[[1]], 4)
 ```
 
 \subsection*{Problem 7}
