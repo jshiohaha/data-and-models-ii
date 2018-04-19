@@ -261,18 +261,15 @@ hypothesisVector = function(X, theta) {
 }
 
 Jcost = function(y, h) {
-  epsilon = 1.e-20
+  epsilon = 1.e-10
   n = length(y)
 
   # Take the error when label=0
   ifelse(h < epsilon, epsilon, h)
   # Take the error when label=1
   ifelse(h > 1-epsilon, 1-epsilon, h)
-  
-  v1 = y*log(h)
-  v2 = (1-y)*log(1-h)
 
-  return ( (sum(v1) + sum(v2)) / n )
+  return ( (sum(y*log(h)) + sum((1-y)*log(1-h))) / n )
 }
 
 # TODO: does not converge correctly
@@ -281,7 +278,7 @@ gradientDescent <- function(X, y){
   y = as.vector(y)
   
   theta = runif(ncol(X), -1, 1)
-  alpha = 0.2
+  alpha = 0.5
   maxIterations = 10000
   n = length(y)
   epsilon = 1.e-10
