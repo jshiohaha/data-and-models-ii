@@ -439,16 +439,12 @@ compute_p_statistic <- function(t_statistic, n){
 # - Implement using library functions on the training set
 fit <- randomForest(as.factor(TenYearCHD) ~., data=trainset, importance=TRUE, ntree=1000)
 varImpPlot(fit)
-
 pred <- predict(fit, testset)
 
 # - Create confusion tables for predicting on the test set. You may use any solution parameters or tuning options.
 # - Display the accuracy and the true positive and negative error rates
 t = table(actual = testset$TenYearCHD, predict = pred)
 acc(t, FALSE)
-
-# - Comment on why this method did or did not result in better accuracy or a better true positive rate (precision.) No need to keep trying other methods if you didn't pick a winner initially, just explain why the method was weaker on this data set.
-
 ```
 
 By looking at the varImpPlot, we can clearly see that some variables are much more significant than others. By not pruning the random forest and passing it all the features, some of the trees could have been made with features that were not useful, making them give improper predictions. In the situation of the Framingham study, this model is much worse because the sensitivity of it is very low.
