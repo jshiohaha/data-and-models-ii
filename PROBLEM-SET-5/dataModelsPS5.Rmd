@@ -281,14 +281,14 @@ hypothesisVector = function(X, theta) {
 
 Jcost = function(y, h) {
   epsilon = 1.e-10
-  n = length(y)
+  n = nrow(y)
 
   # Take the error when label=0
   ifelse(h < epsilon, epsilon, h)
   # Take the error when label=1
   ifelse(h > 1-epsilon, 1-epsilon, h)
 
-  return ( (sum(y*log(h)) + sum((1-y)*log(1-h))) / n )
+  return( (1/n)*sum((-y*log(h)) - ((1-y)*log(1-h))) )
 }
 
 # TODO: does not converge correctly
@@ -299,7 +299,7 @@ gradientDescent <- function(X, y){
   theta = runif(ncol(X), -1, 1)
   alpha = 0.5
   maxIterations = 10000
-  n = length(y)
+  n = nrow(y)
   epsilon = 1.e-10
   
   for ( i in 1:maxIterations){
@@ -315,14 +315,16 @@ gradientDescent <- function(X, y){
       # update
       theta = theta - alpha * gradient
 
-      if (i %% 100 == 0) {
-        sse = sum(loss^2)
-
-        psi("Iteration: ", i)
-        psi("SSE: ", sse)
-        # print(cost)
-        # print(theta)
-      }
+      # if (i %% 100 == 0) {
+      #   sse = sum(loss^2)
+      # 
+      #   psi("Iteration: ", i)
+      #   psi("SSE: ", sse)
+      #   # print(cost)
+      #   # print(theta)
+      #   # psi("Theta: ", theta)
+      # 
+      # }
 
       if(sum(loss)^2 < epsilon){
         break
@@ -433,6 +435,11 @@ compute_p_statistic <- function(t_statistic, n){
     return (p_stat_arr)
 }
 ```
+
+```{r}
+
+```
+
 
 \subsection*{Problem 9}
 ```{r echo = TRUE}
