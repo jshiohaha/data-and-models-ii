@@ -422,49 +422,35 @@ def baseline_model(X):
 def nueral_net_solver(X, Y):
     print(">> Training a Keras Sequential model\n")\
 
-    seed = 7
-    np.random.seed(seed)
     rows, columns = X.shape
 
+    # Set Y data to categorical
     X = np.reshape(X, (1, rows, columns))
     Y = np.reshape(Y, (1, rows, 1))
-
     Y = to_categorical(Y)
 
-    print(X.shape)
-    print(Y.shape)
-
-    # clf = Sequential()
-    # clf.add(Dense(11, input_shape = (rows, columns), activation='relu'))
-    # clf.add(Dense(10, activation='sigmoid'))
-    # clf.compile(optimizer='adam', loss='binary_crossentropy')
-    # clf.fit(X, Y, batch_size=64, epochs=300, validation_data=(X, Y), verbose=0)
-    #
-    # preds = clf.predict(X)
-    # preds[preds>=0.5] = 1
-    # preds[preds<0.5] = 0
-    # print(f1_score(Y, preds, average='macro'))
-
-    # estimator = KerasClassifier(build_fn=baseline_model(X), epochs = 200, batch_size = 5, verbose = 0)
-    # kfold = KFold(n_splits=10,shuffle=True, random_state=None)
-    # results = cross_val_score(estimator, X, Y, cv=kfold)
-    # print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
-
+    # Create Trained Neural Net
     model = Sequential()
     model.add(Dense(11, input_shape=(rows, columns), activation = 'relu'))
     model.add(Dense(10, activation='sigmoid'))
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     model.fit(X, Y, epochs=600, batch_size=100, verbose=0)
 
+    # Test Neural Net
     y1 = model.predict_classes(X)
-    # Manually check accuracy for a few instances
-    # for i in range(500):
-    #    print("Actual: {}, Predicted: {}".format(np.argmax(Y[0,i]),y1[0,i]))
+
+    # Evaluate Accuracy
     score = model.evaluate(X, Y, batch_size=45)
     print(model.metrics_names)
     print("Score: {}".format(score))
 
     plot_model(model, to_file='model_2.png', show_shapes=True)
+
+    # Set up Confusion Matrix
+    ynew = [0]* len(Y[0])
+    for i in range(len(Y[0])):
+        ynew[i] = np.argmax(Y[0,i])
+    print(confusion_matrix(ynew, y1[0]))
 
 '''
     TODO'S...
