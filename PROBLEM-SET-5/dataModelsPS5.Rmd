@@ -9,6 +9,17 @@ output: pdf_document
 
 ```{r echo = FALSE, messages=FALSE, warning=FALSE, include=FALSE}
 # NOTE: You must first install the following packages for your machine's R installation before this RMD file will compile
+# install.packages("mice")
+# install.packages("lattice")
+# install.packages("dplyr")
+# install.packages("corrplot")
+# install.packages("pscl")
+# install.packages("Metrics")
+# install.packages("caret")
+# install.packages("ROCR")
+# install.packages("sigmoid")
+# install.packages("randomForest")
+
 library(mice)
 library(lattice)
 library(dplyr)
@@ -21,7 +32,7 @@ library(sigmoid)
 library(randomForest)
 
 # Change as needed
-workingDirectory = "/Users/reidgahan/Desktop/School/ML/data-and-models-ii/PROBLEM-SET-5"
+workingDirectory = "D:/DataModeling2/data-and-models-ii/PROBLEM-SET-5"
 
 setwd(workingDirectory)
 # Include Keck Lib Utility Functions
@@ -214,12 +225,11 @@ acc(t, FALSE)
 
 # - Using the 'best' model, predict the 10YrCHD on the test set
 # -- Display the confusion matrix, the accuracy, as well as the true positive and true negative rates
-testSetPredictions <- sigmoid::sigmoid(predict(modelBest, newdata=testset, type="response"), method = "logistic", inverse = FALSE, SoftMax = FALSE)
+testSetPredictions <- activationFunction(predict(modelBest, newdata=testset, type="response"))
+testSetPredictions <- sigmoid::sigmoid(predict(modelBest, newdata=testset), method = "logistic", inverse = FALSE, SoftMax = FALSE)
 
 # -- Display the confusion matrix, the accuracy, as well as the true positive and true negative rates. Displayed using output function from KeckLib.R
 t = table(actual = testset$TenYearCHD, predict = testSetPredictions > 0.5)
-
-# I'm getting an error here... something with "colname"length of 'dimnames' [2] not equal to array extent"" -- Reid
 acc(t, FALSE)
 ```
 
@@ -288,7 +298,7 @@ Jcost = function(y, h) {
   # Take the error when label=1
   ifelse(h > 1-epsilon, 1-epsilon, h)
 
-  return( (1/n)*sum((-y*log(h)) - ((1-y)*log(1-h))) )
+  return( (1/n)*((-y*log(h)) - ((1-y)*log(1-h))) )
 }
 
 # TODO: does not converge correctly
@@ -311,20 +321,21 @@ gradientDescent <- function(X, y){
       
       # avg gradient per example
       gradient = (t(X) %*% as.matrix(loss)) / n
+      # gradient = (t(X) %*% as.matrix(hypothesis * y)) / n
 
       # update
       theta = theta - alpha * gradient
 
-      # if (i %% 100 == 0) {
-      #   sse = sum(loss^2)
-      # 
-      #   psi("Iteration: ", i)
-      #   psi("SSE: ", sse)
-      #   # print(cost)
-      #   # print(theta)
-      #   # psi("Theta: ", theta)
-      # 
-      # }
+      if (i %% 1000 == 0) {
+        sse = sum(loss^2)
+
+        psi("Iteration: ", i)
+        psi("SSE: ", sse)
+        # print(cost)
+        # print(theta)
+        # psi("Theta: ", theta)
+
+      }
 
       if(sum(loss)^2 < epsilon){
         break
@@ -346,8 +357,61 @@ testX <- testset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHy
 thetas <- gradientDescent(trainX, trainY)
 
 # - Compare to glm()'s coefficients in a single table
-cbind(thetas, modelBest$coefficients)
+cbind(thetas, modelBest$coefficients[2:8]) 
 ```
+
+# Wrote a second function for 8 using optim and code from https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/ to check code above. Still not sure what's going wrong.
+```{r}
+# Sigmoid Function
+sigmoid <- function(X, theta){
+  g <- 1/(1+exp(-(X%*%theta)))
+  return(g)
+}
+
+# Cost Function
+cost <- function(theta, X, Y){
+  m <- nrow(X)
+  g <- sigmoid(X, theta)
+  J <- (1/m)*sum((-Y*log(g)) - ((1-Y)*log(1-g)))
+  return(J)
+}
+
+# Gradient Descent
+gradientDescent2 <- function(X, y){
+  # Intial theta
+  X = as.matrix(X)
+  y = as.vector(y)
+  initial_theta <- rep(0,ncol(X))
+
+  # Cost at inital theta
+  cost(initial_theta, X, y)
+  
+  # Derive theta using gradient descent using optim function
+  theta_optim <- optim(par=initial_theta, fn=cost, X=X, Y=y)
+
+  #set theta
+  theta <- theta_optim$par
+
+  #cost at optimal value of the theta
+  theta_optim$value
+  
+  return(theta)
+}
+
+# - Create the X and y test and training sets
+trainY <- data.frame(trainset$TenYearCHD)
+trainX <- trainset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHyp", "sysBP", "glucose")]
+
+testY <- testset$TenYearCHD
+testX <- testset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHyp", "sysBP", "glucose")]
+
+# - Compute the parameters (coefficients)
+thetas2 <- gradientDescent2(trainX, trainY)
+
+# - Compare to glm()'s coefficients in a single table
+cbind(thetas2, modelBest$coefficients[2:8]) 
+```
+
 
 \subsection*{Problem 8}
 ```{r echo = TRUE}
@@ -406,7 +470,7 @@ compute_standard_error <- function(X){
       # - The standard errors are the diagonals of C =(X^T*V*X)^-1
       # - and v_jj = p_j * (1-p_j) and v_ij = 0 for i /= j, 1 <= i,j <= p
       # - p are the theta_hat probabilities before thresholding but after the sigmoid transformation
-    cov_matrix = 1 # TODO: compute covariance matrix np.cov(X.T, rowvar=True)
+    cov_matrix = cov(t(X)) # TODO: compute covariance matrix np.cov(X.T, rowvar=True)
     return (sqrt(diag(cov_matrix)))
 }
 
@@ -417,8 +481,11 @@ compute_t_statistic <- function(std_err_arr, coefficients){
     # should instantiate an array here
     t_stat_arr = c()
     for( i in 1:length(std_err_arr)){
+      #print(coefficients[i])
+      print(std_err_arr[i])
         t_stat = (coefficients[i] / std_err_arr[i])[0]
-        t_stat_arr.append(t_stat)
+        t_stat_arr = c(t_stat_arr,t_stat)
+        #print(t_stat)
     }
     return ( t_stat_arr )
 }
@@ -428,16 +495,20 @@ compute_p_statistic <- function(t_statistic, n){
     # returns calculated value of p-statistics for each coefficent in an array
     p_stat_arr = c()
     for( i in 1:length(t_statistic)){
-        pval = 1 # stats.t.sf(np.abs(t_statistic[i]), n-1)*2
-        p_stat_arr.append(pval)
+        pval = pt(-abs(t_statistic[i]), df = n-1) # stats.t.sf(np.abs(t_statistic[i]), n-1)*2
+        p_stat_arr = c(p_stat_arr, pval)
     }
 
     return (p_stat_arr)
 }
-```
-
-```{r}
-
+std_err = compute_standard_error(trainX)
+print("Z-Statistics:")
+t_stat = compute_t_statistic(std_err, thetas)
+print("T-Statistics:")
+print(t_stat)
+p_stat = compute_p_statistic(t_stat, nrow(trainX))
+print("P-Statistics:")
+print(p_stat)
 ```
 
 
