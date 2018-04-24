@@ -32,7 +32,7 @@ library(sigmoid)
 library(randomForest)
 
 # Change as needed
-workingDirectory = "D:/DataModeling2/data-and-models-ii/PROBLEM-SET-5"
+workingDirectory = "~/Desktop/School/ML/data-and-models-ii/PROBLEM-SET-5"
 
 setwd(workingDirectory)
 # Include Keck Lib Utility Functions
@@ -183,10 +183,14 @@ psi("Full Model Log likelihood: ", modelFullLogLike)
 
 modelFullDeviance <- modelFull$deviance
 psi("Full Model Deviance: ", modelFullDeviance)
-
-# - Compare the models and comment
-# TODO...
 ```
+
+\noindent
+\textbf{Question}: Compare the models and comment. \\
+
+\noindent
+By looking at AIC values, the 'full' logistic regression model using all the features is the better model. The null model has an AIC of 2901 while the full model has one of 2613.
+
 
 \subsection*{Problem 4}
 ```{r echo = TRUE}
@@ -219,10 +223,13 @@ t = table(actual = trainset$TenYearCHD, predict = trainingSetPredictions > 0.5)
 acc(t, FALSE)
 ```
 
-```{r echo = TRUE}
-# - Compare to the baseline model from Question 2
-# TODO...
+\noindent
+\textbf{Question}: Compare to the baseline model from Question 2. \\
 
+\noindent
+The two models had the same overall accuracy of 85.14\%. This shows that even the best model still struggles to properly predict correctly.
+
+```{r echo = TRUE}
 # - Using the 'best' model, predict the 10YrCHD on the test set
 # -- Display the confusion matrix, the accuracy, as well as the true positive and true negative rates
 testSetPredictions <- activationFunction(predict(modelBest, newdata=testset, type="response"))
@@ -262,7 +269,6 @@ grid()
 # - Comment on your findings for each plot
 # TODO...
 
-# - TODO: Comment
 # Using best
 best.auc.perf <- ROCR::performance(rocrPred, measure="auc")
 psr("AUC value for the 'best' model", best.auc.perf@y.values[[1]], 4)
@@ -280,6 +286,12 @@ full_rocrPred <- ROCR::prediction(data.frame(full_trainingSetPredictions)[,1], t
 full.auc.perf <- ROCR::performance(full_rocrPred, measure="auc")
 psr("AUC value for the 'full' model", full.auc.perf@y.values[[1]], 4)
 ```
+
+\noindent
+\textbf{Question}: Commment on AUC. \\
+
+\noindent
+An AUC of .5 is considered worthless, so, as expected, the 'null' model is not a desirable model for this problem. Interestingly, in our AUC calculations, the 'full' model had a higher, and therefore better, AUC than the 'best' model did, make the 'full' model the best performing model under the AUC test.
 
 \subsection*{Problem 7}
 ```{r echo = TRUE}
@@ -529,7 +541,6 @@ By looking at the varImpPlot, we can clearly see that some variables are much mo
 
 \subsection*{Problem 10}
 ```{r echo = FALSE}
-# TODO: Make sure this is valid? 
 # - Read the technical paper ==> http://circ.ahajournals.org/content/97/18/1837
 
 # What is Logistic Regression? 
