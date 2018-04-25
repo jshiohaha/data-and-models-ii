@@ -1,24 +1,18 @@
-\usepackage[obeyspaces]{url}
-
 ---
 title: "Problem Set 5"
 author: "Jacob Miller, Jacob Shiohira, Reid Gahan"
 date: "4/14/2018"
-output: pdf_document
+output: 
+  pdf_document: 
+    latex_engine: xelatex
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ```{r echo = FALSE, messages=FALSE, warning=FALSE, include=FALSE}
 # NOTE: You must first install the following packages for your machine's R installation before this RMD file will compile
-# install.packages("mice")
-# install.packages("lattice")
-# install.packages("dplyr")
-# install.packages("corrplot")
-# install.packages("pscl")
-# install.packages("Metrics")
-# install.packages("caret")
-# install.packages("ROCR")
-# install.packages("sigmoid")
-# install.packages("randomForest")
 
 library(mice)
 library(lattice)
@@ -65,8 +59,7 @@ summary(df)
 # - Explore the data (plots, tables, statistics) including feature types.
 M <- cor(mtcars)
 corrplot(M, method = "circle")
-# TODO: Uncomment at the end... it just takes a while to run.
-# pairs(df)
+pairs(df)
 
 df_as_numeric <- sapply(df, as.numeric)
 hist(df_as_numeric, freq=FALSE, xlab="Dataframe values", main="Distribution of Dataset Values", col="lightgreen")
@@ -302,7 +295,7 @@ hypothesisVector = function(X, theta) {
 }
 
 Jcost = function(y, h) {
-  epsilon = 1.e-10
+  epsilon = 0.0000000001
   n = nrow(y)
 
   # Take the error when label=0
@@ -313,7 +306,6 @@ Jcost = function(y, h) {
   return( (1/n)*((-y*log(h)) - ((1-y)*log(1-h))) )
 }
 
-# TODO: does not converge correctly
 gradientDescent <- function(X, y){
   X = as.matrix(X)
   y = as.vector(y)
@@ -322,7 +314,7 @@ gradientDescent <- function(X, y){
   alpha = 1
   maxIterations = 25000
   n = nrow(y)
-  epsilon = 1.e-10
+  epsilon = 0.0000000001
   oldSSE = 999999999999
   
   for ( i in 1:maxIterations){
@@ -418,19 +410,12 @@ manualAIC <- function(n, sse, ssr, dfm, actual, predictions){
 
 compute_standard_error <- function(X){
     # returns calculated value of standard errors of matrix X in an array
-      # - The standard errors are the diagonals of C =(X^T*V*X)^-1
-      # - and v_jj = p_j * (1-p_j) and v_ij = 0 for i /= j, 1 <= i,j <= p
-      # - p are the theta_hat probabilities before thresholding but after the sigmoid transformation
-      #cov_matrix = cov(t(X)) # TODO: compute covariance matrix np.cov(X.T, rowvar=True)
-      #return (sqrt(diag(cov_matrix)))
     mf <- function(x){sd(X[,x])/sqrt(length(X[,x]))}
     return(sapply(1:length(X[1,]),mf))
 }
 
 compute_t_statistic <- function(std_err_arr, coefficients){
     # returns calculated value of t-statistics for each coefficent in an array
-  
-    # should instantiate an array here
     t_stat_arr = c()
     for( i in 1:length(std_err_arr)){
         t_stat = (coefficients[i] / std_err_arr[i])
