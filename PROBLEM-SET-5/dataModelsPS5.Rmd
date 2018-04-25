@@ -58,7 +58,7 @@ summary(df)
 # - Explore the data (plots, tables, statistics) including feature types.
 M <- cor(mtcars)
 corrplot(M, method = "circle")
-# pairs(df)
+pairs(df)
 
 df_as_numeric <- sapply(df, as.numeric)
 hist(df_as_numeric, freq=FALSE, xlab="Dataframe values", main="Distribution of Dataset Values", col="lightgreen")
