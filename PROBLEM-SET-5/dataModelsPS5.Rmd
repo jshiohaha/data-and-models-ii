@@ -7,12 +7,10 @@ output:
     latex_engine: xelatex
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ```{r echo = FALSE, messages=FALSE, warning=FALSE, include=FALSE}
 # NOTE: You must first install the following packages for your machine's R installation before this RMD file will compile
+knitr::opts_chunk$set(echo = TRUE)
 
 library(mice)
 library(lattice)
@@ -26,7 +24,7 @@ library(sigmoid)
 library(randomForest)
 
 # Change as needed
-workingDirectory = "D:/DataModeling2/data-and-models-ii/PROBLEM-SET-5"
+workingDirectory = "/Users/jacobshiohira/Documents/ACADEMICS/JUNYA/Spring/DATA-MODELS-II/PROBLEM-SETS/PROBLEM-SET-5"
 
 setwd(workingDirectory)
 # Include Keck Lib Utility Functions
@@ -49,6 +47,7 @@ df <- read.csv("Data/framingham.csv", stringsAsFactors = FALSE)
 str(df)
 ```
 
+\noindent
 The output above tells us there are a total of $4,240$ observations and $16$ features in the dataset. The total number of observations in this case includes rows with possible NAN values.
 
 \newpage
@@ -59,7 +58,7 @@ summary(df)
 # - Explore the data (plots, tables, statistics) including feature types.
 M <- cor(mtcars)
 corrplot(M, method = "circle")
-pairs(df)
+# pairs(df)
 
 df_as_numeric <- sapply(df, as.numeric)
 hist(df_as_numeric, freq=FALSE, xlab="Dataframe values", main="Distribution of Dataset Values", col="lightgreen")
@@ -99,11 +98,13 @@ imputed_df <- complete(mice(df, m=5, maxit=50, meth="pmm", printFlag=FALSE, seed
 summary(imputed_df)
 ```
 
+
 ```{r echo = TRUE}
 # -- Uniformly then Normally scaling the dataset. Reference the histogram plots to verify the best type of scaling, if even necessary.
 UnifDF <- ScaleUnif(imputed_df)
 NormDF <- data.frame(apply(imputed_df, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))))
 ```
+
 
 ```{r echo = TRUE}
 # -- Shuffle the dataset then split data with 80% in the training set and 20% in the test set.
@@ -179,10 +180,7 @@ psi("Full Model Deviance: ", modelFullDeviance)
 ```
 
 \noindent
-\textbf{Question}: Compare the models and comment. \\
-
-\noindent
-By looking at AIC values, the 'full' logistic regression model using all the features is the better model. The null model has an AIC of 2901 while the full model has one of 2613.
+\textbf{Compare and comment on the AUC of the models}: By looking at AIC values, the 'full' logistic regression model using all the features is the better model. The null model has an AIC of 2901 while the full model has one of 2613.
 
 
 \subsection*{Problem 4}
@@ -238,30 +236,51 @@ acc(t, FALSE)
 # Now use ROC curves to reconsider a threshold (cutoff) of .5 using the ROCR (or other) package
 # -- Create the prediction object for the training set
 rocrPred <- ROCR::prediction(data.frame(trainingSetPredictions)[,1], trainset$TenYearCHD)
+```
 
+
+```{r echo = TRUE}
 # - Plot the accuracy v. the threshold (cutoff)
 perf <- ROCR::performance(rocrPred, measure = "acc")
 plot(perf, colorize=FALSE, colorize.palette=rev(rainbow(256)))
 grid()
+```
 
+\noindent
+\textbf{Comment on accuracy v. the threshold}: We can see on the above graph that our model rapidly gains accuracy between the cutoff range of $0.0$ and $0.2$. However, after that point, we approach the threshold of approximately $0.85$. Thus, this tells us that there is really not much to gain in terms of accuracy past the cutoff value of $0.2$, which we should take into consideration when evaluating the ROC plots below. 
+
+```{r echo = TRUE}
 # - Plot the true positive rate v. the false positive rate and label the threshold values
 tprFprPerf <- ROCR::performance(rocrPred, measure = "tpr", x.measure = "fpr") 
 plot(tprFprPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
 grid()
+```
 
+\noindent
+\textbf{Comment on TPR v. the FPR}: The graph above shows us that any increase in sensitivity will be accompanied by a decrease in specificity. More specifically, the model is more accurate the closer the curve follows the left-hand and top border of the ROC space. Alternatively, we see that the model is less accurate the closer the curve comes to the 45-degree diagonal of the ROC space. In the range between $0.0$ and $0.2$ on the false positive rate axis, we gain a significant amount in the value of the true positive rate without losing much of the value from the false positive rate. However, after $0.2$ on the false positive rate axis, we start to lose a more significant amount for any gain in the true positive rate. Thus, we must consider which statisitic is more important based on the context of our problem.
+
+```{r echo = TRUE}
 # - Plot sensitivity v. specificity and label the threshold values
 sensVsSpecPerf <- ROCR::performance(rocrPred, measure = "sens", x.measure = "spec") 
 plot(sensVsSpecPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
 grid()
+```
 
+\noindent
+\textbf{Comment on sensitivity v. specificity}: Recall that sensitivity is the measure of correctly classified true values and specificity is the measure of correctly classified negative values. Thus, the above graph shows us we slowly start to misclassify true values as we rapidly start to correctly classify negative values. Depending on the application of the model, one might value a higher sensitivity measure over a higher specificity value. In this problem set, where it is objectively more important to correctly classify those with a medical condition, we value sensitivity over specificity. However, we might accept some trade off for a higher specificity value to the range of $0.4$ to $0.8$.  
+
+```{r echo = TRUE}
 # - Plot precision v. recall and label the threshold values
 precVsRecallPerf <- ROCR::performance(rocrPred, measure = "prec", x.measure = "rec") 
 plot(precVsRecallPerf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
 grid()
+```
 
-# - Comment on your findings for each plot
-# TODO...
+\noindent
+\textbf{Comment on precision v. recall}: Recall is essentially the ability of our model to find all the relevant true values within the dataset. More specifically, recall is the number of true positives divided by the number of true positives plus the number of false negatives. In contrast to recall, precision expresses the proportion of the data points our model says was relevant actually were relevant. More specifically, precision is the number of true positives divided by the number of true positives plus the number of false positives. So, in the context of the above graph, we can see there is a major point of inversion between $0.4$ and $0.3$ on the precision axis. This is the range we should consider interesting because outside of this range, the cost of tradeoff between precision and recall is too great unless we are specifically concerned with maximizing one value over the other.
 
+
+```{r echo = TRUE}
 # Using best
 best.auc.perf <- ROCR::performance(rocrPred, measure="auc")
 psr("AUC value for the 'best' model", best.auc.perf@y.values[[1]], 4)
@@ -368,14 +387,7 @@ comparisons
 
 \subsection*{Problem 8}
 ```{r echo = TRUE}
-# -- Compute the following from the gradient descent code in the previous problem
-# - standard errors
-# - Z-statistics
-# - P values in a single labeled table along with the coefficients
-# - The standard errors are the diagonals of C =(X^T*V*X)^-1
-# - and v_jj = p_j * (1-p_j) and v_ij = 0 for i /= j, 1 <= i,j <= p
-# - p are the theta_hat probabilities before thresholding but after the sigmoid transformation
-# - Compute and verify the log likelihood, deviance, and AIC with those from glm()
+# Section of auxiliary functions used in calculating the statistics for question 8. See the section below for the usage of these functions
 
 calculate_ssr <- function(actual, predictions){
   # returns value residual sum of squared errors
@@ -436,7 +448,8 @@ compute_p_statistic <- function(t_statistic, n){
 }
 ```
 
-\textbf{Part 1:} Gradient Descent Statistics on Training Data
+\noindent
+\textbf{Part 1:} Gradient Descent Statistics on Training Data \\
 
 \noindent
 The training data log likelihood, deviance, and AIC are pretty much the same from our own gradient descent model to the glm model's, which can be seen in the summary of question #4.
@@ -505,16 +518,15 @@ t = table(actual = testset$TenYearCHD, predict = pred)
 acc(t, FALSE)
 ```
 
+\noindent
 By looking at the varImpPlot, we can clearly see that some variables are much more significant than others. By not pruning the random forest and passing it all the features, some of the trees could have been made with features that were not useful, making them give improper predictions. In the situation of the Framingham study, this model is much worse because the sensitivity of it is very low.
 
 \subsection*{Problem 10}
 ```{r echo = FALSE}
 # - Read the technical paper ==> http://circ.ahajournals.org/content/97/18/1837
-
-# What is Logistic Regression? 
-# --> Logistic regression is the appropriate regression analysis to conduct when the dependent variable is dichotomous (binary).  Like all regression analyses, the logistic regression is a predictive analysis.  Logistic regression is used to describe data and to explain the relationship between one dependent binary variable and one or more nominal, ordinal, interval or ratio-level independent variables.
 ```
 
+\noindent
 \textbf{Question}: How is that method different from logistic regression? One paragraph is sufficient, full understanding is not required, just the essential idea.
 
 \noindent
