@@ -240,8 +240,8 @@ acc(t, FALSE)
 rocrPred <- ROCR::prediction(data.frame(trainingSetPredictions)[,1], trainset$TenYearCHD)
 
 # - Plot the accuracy v. the threshold (cutoff)
-perf <- ROCR::performance(rocrPred, measure = "acc") 
-plot(perf, colorize=F, colorize.palette=rev(rainbow(256)))
+perf <- ROCR::performance(rocrPred, measure = "acc")
+plot(perf, colorize=FALSE, colorize.palette=rev(rainbow(256)))
 grid()
 
 # - Plot the true positive rate v. the false positive rate and label the threshold values
@@ -307,10 +307,11 @@ gradientDescent <- function(X, y){
   y = as.vector(y)
   
   theta = runif(ncol(X), -1, 1)
-  alpha = 0.5
-  maxIterations = 10000
+  alpha = 1
+  maxIterations = 25000
   n = nrow(y)
   epsilon = 1.e-10
+  oldSSE = 999999999999
   
   for ( i in 1:maxIterations){
       hypothesis = hypothesisVector(X, theta)
@@ -326,20 +327,13 @@ gradientDescent <- function(X, y){
       # update
       theta = theta - alpha * gradient
 
-      if (i %% 1000 == 0) {
-        sse = sum(loss^2)
-
-        psi("Iteration: ", i)
-        psi("SSE: ", sse)
-        # print(cost)
-        # print(theta)
-        # psi("Theta: ", theta)
-
-      }
-
-      if(sum(loss)^2 < epsilon){
+      newSSE = sum(loss^2)
+      
+      errn = abs((newSSE - oldSSE)/oldSSE)
+      if(errn < epsilon){
         break
       }
+      oldSSE = newSSE
   }
   
   psi("Total number of iterations: ", i)
@@ -349,74 +343,27 @@ gradientDescent <- function(X, y){
 # - Create the X and y test and training sets
 trainY <- data.frame(trainset$TenYearCHD)
 trainX <- trainset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHyp", "sysBP", "glucose")]
+trainX <- cbind(rep(1,nrow(trainX)), trainX)
+colnames(trainX)[1] = "(Intercept)"
 
-testY <- testset$TenYearCHD
+testY <- data.frame(testset$TenYearCHD)
 testX <- testset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHyp", "sysBP", "glucose")]
+testX <- cbind(rep(1,nrow(testX)), testX)
+colnames(testX)[1] = "(Intercept)"
 
 # - Compute the parameters (coefficients)
-thetas <- gradientDescent(trainX, trainY)
+trainThetas <- gradientDescent(trainX, trainY)
+testThetas <- gradientDescent(testX, testY)
 
 # - Compare to glm()'s coefficients in a single table
-cbind(thetas, modelBest$coefficients[2:8]) 
-```
-
-# Wrote a second function for 8 using optim and code from https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/ to check code above. Still not sure what's going wrong.
-```{r}
-# Sigmoid Function
-sigmoid <- function(X, theta){
-  g <- 1/(1+exp(-(X%*%theta)))
-  return(g)
-}
-
-# Cost Function
-cost <- function(theta, X, Y){
-  m <- nrow(X)
-  g <- sigmoid(X, theta)
-  J <- (1/m)*sum((-Y*log(g)) - ((1-Y)*log(1-g)))
-  return(J)
-}
-
-# Gradient Descent
-gradientDescent2 <- function(X, y){
-  # Intial theta
-  X = as.matrix(X)
-  y = as.vector(y)
-  initial_theta <- rep(0,ncol(X))
-
-  # Cost at inital theta
-  cost(initial_theta, X, y)
-  
-  # Derive theta using gradient descent using optim function
-  theta_optim <- optim(par=initial_theta, fn=cost, X=X, Y=y)
-
-  #set theta
-  theta <- theta_optim$par
-
-  #cost at optimal value of the theta
-  theta_optim$value
-  
-  return(theta)
-}
-
-# - Create the X and y test and training sets
-trainY <- data.frame(trainset$TenYearCHD)
-trainX <- trainset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHyp", "sysBP", "glucose")]
-
-testY <- testset$TenYearCHD
-testX <- testset[,c("male", "age", "cigsPerDay", "prevalentStroke", "prevalentHyp", "sysBP", "glucose")]
-
-# - Compute the parameters (coefficients)
-thetas2 <- gradientDescent2(trainX, trainY)
-
-# - Compare to glm()'s coefficients in a single table
-cbind(thetas2, modelBest$coefficients[2:8]) 
+comparisons = cbind(modelBest$coefficients[1:8], cbind(trainThetas,testThetas))
+colnames(comparisons) = c("ModelBest", "GD Train", "GD Test")
+comparisons
 ```
 
 
 \subsection*{Problem 8}
 ```{r echo = TRUE}
-# TODO: finish these and make sure they match output from glm()
-
 # -- Compute the following from the gradient descent code in the previous problem
 # - standard errors
 # - Z-statistics
@@ -434,28 +381,20 @@ calculate_ssr <- function(actual, predictions){
 
 calculate_sse <- function(actual, predictions){
     # returns value sum of squared errors
-    ybar = mean(actual)
+    ybar = sum(actual)/nrow(actual)
     sse = sum((predictions-ybar)^2)
     return (sse)
 }
 
 calculate_sst <- function(actual, predictions){
     # returns value total sum of squared errors
-    ybar = mean(actual)
+    ybar = sum(actual)/nrow(actual)
     sst = sum((actual - ybar)^2) 
     return (sst)
 }
 
-loglike <- function(n, sse, ssr, dfm, actual, predictions){
-    # returns value for the log likelihood
-
-    rse = sse / (n-dfm)
-    nobs2 = n / 2.0
-    llf = -math.log(ssr) * nobs2                   # concentrated likelihood
-    llf = llf - (1 + math.log(np.pi/nobs2))*nobs2  # with likelihood constant
-    llf = llf - 1/(2*math.log(rse))
-
-    return (round(llf, 0))
+LogL = function(y,h) { 
+  return ( (t(y) %*% log(h) + t(1-y) %*% log(1-h)) )
 }
 
 manualAIC <- function(n, sse, ssr, dfm, actual, predictions){
@@ -470,27 +409,24 @@ compute_standard_error <- function(X){
       # - The standard errors are the diagonals of C =(X^T*V*X)^-1
       # - and v_jj = p_j * (1-p_j) and v_ij = 0 for i /= j, 1 <= i,j <= p
       # - p are the theta_hat probabilities before thresholding but after the sigmoid transformation
-    cov_matrix = cov(t(X)) # TODO: compute covariance matrix np.cov(X.T, rowvar=True)
-    return (sqrt(diag(cov_matrix)))
+      #cov_matrix = cov(t(X)) # TODO: compute covariance matrix np.cov(X.T, rowvar=True)
+      #return (sqrt(diag(cov_matrix)))
+    mf <- function(x){sd(X[,x])/sqrt(length(X[,x]))}
+    return(sapply(1:length(X[1,]),mf))
 }
 
-# TODO: Convert from Python
 compute_t_statistic <- function(std_err_arr, coefficients){
     # returns calculated value of t-statistics for each coefficent in an array
   
     # should instantiate an array here
     t_stat_arr = c()
     for( i in 1:length(std_err_arr)){
-      #print(coefficients[i])
-      print(std_err_arr[i])
-        t_stat = (coefficients[i] / std_err_arr[i])[0]
+        t_stat = (coefficients[i] / std_err_arr[i])
         t_stat_arr = c(t_stat_arr,t_stat)
-        #print(t_stat)
     }
     return ( t_stat_arr )
 }
 
-# TODO: Convert from python
 compute_p_statistic <- function(t_statistic, n){
     # returns calculated value of p-statistics for each coefficent in an array
     p_stat_arr = c()
@@ -501,14 +437,61 @@ compute_p_statistic <- function(t_statistic, n){
 
     return (p_stat_arr)
 }
+```
+
+\textbf{Part 1:} Gradient Descent Statistics on Training Data
+
+\noindent
+The training data log likelihood, deviance, and AIC are pretty much the same from our own gradient descent model to the glm model's, which can be seen in the summary of question #4.
+```{r}
 std_err = compute_standard_error(trainX)
-print("Z-Statistics:")
-t_stat = compute_t_statistic(std_err, thetas)
-print("T-Statistics:")
-print(t_stat)
+t_stat = compute_t_statistic(std_err, trainThetas)
 p_stat = compute_p_statistic(t_stat, nrow(trainX))
-print("P-Statistics:")
-print(p_stat)
+train_tab <- cbind(trainThetas, cbind(std_err, cbind(t_stat, p_stat)))
+colnames(train_tab) <- c("Train_Coeffs", "Std_Err_Train", "t_stat_Train", "p_stat_Train")
+print(train_tab)
+
+predictions_grad_desc_train = as.vector( 1 / (1+exp(-as.matrix(trainX) %*% as.vector(trainThetas))) )
+
+ssr = calculate_ssr(trainY, predictions_grad_desc_train)
+sse = calculate_sse(trainY, predictions_grad_desc_train)
+sst = calculate_sst(trainY, predictions_grad_desc_train)
+psi("SSR for training data using gradient descent: ", ssr)
+psi("SSE for training data using gradient descent:", sse)
+psi("SST for training data using gradient descent:", sst)
+
+log_life_train = LogL(trainY,predictions_grad_desc_train)
+dev_train = -2 * log_life_train
+aic_train = dev_train + 2 * ncol(trainX)
+psi("Log likelihood for training data using gradient descent: ", log_life_train)
+psi("Deviance for training data using gradient descent: ", dev_train)
+psi("AIC for training data using gradient descent: ", aic_train)
+```
+
+\textbf{Part 2:} Gradient Descent Statistics on Test Data
+```{r}
+std_err = compute_standard_error(testX)
+t_stat = compute_t_statistic(std_err, testThetas)
+p_stat = compute_p_statistic(t_stat, nrow(testX))
+train_tab <- cbind(trainThetas, cbind(std_err, cbind(t_stat, p_stat)))
+colnames(train_tab) <- c("Test_Coeffs", "Std_Err_Test", "t_stat_Test", "p_stat_Test")
+print(train_tab)
+
+predictions_grad_desc_test = as.vector( 1 / (1+exp(-as.matrix(testX) %*% as.vector(testThetas))) )
+
+ssr = calculate_ssr(testY, predictions_grad_desc_test)
+sse = calculate_sse(testY, predictions_grad_desc_test)
+sst = calculate_sst(testY, predictions_grad_desc_test)
+psi("SSR for testing data using gradient descent: ", ssr)
+psi("SSE for testing data using gradient descent:", sse)
+psi("SST for testing data using gradient descent:", sst)
+
+log_life_test = LogL(testY,predictions_grad_desc_test)
+dev_test = -2 * log_life_test
+aic_test = dev_test + 2 * ncol(testX)
+psi("Log likelihood for testing data using gradient descent: ", log_life_test)
+psi("Deviance for testing data using gradient descent: ", dev_test)
+psi("AIC for testing data using gradient descent: ", aic_test)
 ```
 
 
