@@ -24,7 +24,7 @@ library(sigmoid)
 library(randomForest)
 
 # Change as needed
-workingDirectory = "/Users/jacobshiohira/Documents/ACADEMICS/JUNYA/Spring/DATA-MODELS-II/PROBLEM-SETS/PROBLEM-SET-5"
+workingDirectory = "D:/DataModeling2/data-and-models-ii/PROBLEM-SET-5"
 
 setwd(workingDirectory)
 # Include Keck Lib Utility Functions
